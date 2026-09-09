@@ -12,9 +12,11 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PermitFront, PermitBack } from "@/components/dashboard/ContractorPermit";
 import { Icon } from "@/components/icons/Icon";
 import { Camera01Icon } from "@hugeicons/core-free-icons";
-import { mockContractors, mockContractorVisits } from "@/data/mock-data";
+import { contractorsApi } from "@/lib/api/endpoints";
+import { ApiError } from "@/lib/api/client";
+import { useApi } from "@/lib/api/useApi";
 import { formatDate, formatDateTime } from "@/lib/utils";
-import type { Contractor } from "@/lib/types";
+import type { Contractor, ContractorVisit } from "@/lib/types";
 
 const ALL_TABS = [
   { value: "add", label: "Add new contractor" },
@@ -33,14 +35,17 @@ export function ContractorsView({ canManage = true }: { canManage?: boolean }) {
       <PageTitle>Contractors</PageTitle>
 
       <PageCard className="px-7 py-7">
-        <div className="relative">
-          <h2 className="mb-6 text-2xl font-bold text-ink">Contractors</h2>
-          <PillTabs items={canManage ? ALL_TABS : ALL_TABS.filter((t) => t.value !== "add")} value={tab} onChange={setTab} className="mb-7" />
+        <h2 className="mb-6 text-2xl font-bold text-ink">Contractors</h2>
+        <PillTabs
+          items={canManage ? ALL_TABS : ALL_TABS.filter((t) => t.value !== "add")}
+          value={tab}
+          onChange={setTab}
+          className="mb-7"
+        />
 
-          {tab === "add" && <AddContractorTab />}
-          {tab === "list" && <ContractorListTab />}
-          {tab === "checkin" && <CheckInTab />}
-        </div>
+        {tab === "add" && <AddContractorTab />}
+        {tab === "list" && <ContractorListTab canManage={canManage} />}
+        {tab === "checkin" && <CheckInTab canCheckIn={!canManage} />}
       </PageCard>
     </div>
   );
@@ -48,37 +53,38 @@ export function ContractorsView({ canManage = true }: { canManage?: boolean }) {
 
 function AddContractorTab() {
   const [created, setCreated] = useState<Contractor | null>(null);
-  const [form, setForm] = useState({ name: "", companyName: "", from: "", to: "", email: "", phone: "" });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function set(key: keyof typeof form) {
-    return (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
-  }
-
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setCreated({
-      _id: "new",
-      name: form.name || "Musa Akpan",
-      companyName: form.companyName || "Tatamomo",
-      email: form.email || "Musa@gmail.com",
-      phone: form.phone || "090776489",
-      idNumber: "737366217ggs7",
-      validityFrom: form.from || "2024-01-12",
-      validityTo: form.to || "2026-11-10",
-      status: "active",
-      createdAt: new Date().toISOString(),
-    });
+    const form = new FormData(e.currentTarget);
+    setBusy(true);
+    setError(null);
+    try {
+      const contractor = await contractorsApi.create({
+        name: String(form.get("name") ?? ""),
+        companyName: String(form.get("companyName") ?? ""),
+        email: String(form.get("email") ?? ""),
+        phone: String(form.get("phone") ?? ""),
+        validityFrom: String(form.get("from") ?? ""),
+        validityTo: String(form.get("to") ?? ""),
+      });
+      setCreated(contractor);
+      e.currentTarget.reset();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.messages.join(" ") : "Could not add this contractor.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <form onSubmit={handleSubmit}>
       <div className="grid grid-cols-1 gap-9 lg:grid-cols-2">
-        {/* Left: the permit being filled in */}
         <div className="overflow-hidden rounded-[10px] border border-border">
-          <div className="border-b border-border py-4 text-center text-base font-bold text-ink">
-            Add new Contractor
-          </div>
-          <div className="relative px-8 py-7">
+          <div className="border-b border-border py-4 text-center text-base font-bold text-ink">Add new Contractor</div>
+          <div className="px-8 py-7">
             <div className="flex items-center gap-3 pb-6">
               <Image src="/branding/dhq-crest.png" alt="" width={52} height={52} />
               <div>
@@ -105,49 +111,33 @@ function AddContractorTab() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-ink">Name</label>
-                <input className={inputClass} placeholder="Name" value={form.name} onChange={set("name")} />
+                <input name="name" className={inputClass} placeholder="Name" required />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-ink">Company name</label>
-                <input
-                  className={inputClass}
-                  placeholder="Company"
-                  value={form.companyName}
-                  onChange={set("companyName")}
-                />
+                <input name="companyName" className={inputClass} placeholder="Company" required />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-ink">Validity period</label>
                 <div className="flex items-stretch overflow-hidden rounded-[4px] border border-border">
                   <span className="flex items-center bg-grey px-3 text-sm font-semibold text-ink">From</span>
-                  <input
-                    type="date"
-                    className="h-11 min-w-0 flex-1 px-3 text-sm text-ink outline-none"
-                    value={form.from}
-                    onChange={set("from")}
-                  />
+                  <input name="from" type="date" className="h-11 min-w-0 flex-1 px-3 text-sm text-ink outline-none" required />
                   <span className="flex items-center bg-grey px-3 text-sm font-semibold text-ink">To</span>
-                  <input
-                    type="date"
-                    className="h-11 min-w-0 flex-1 px-3 text-sm text-ink outline-none"
-                    value={form.to}
-                    onChange={set("to")}
-                  />
+                  <input name="to" type="date" className="h-11 min-w-0 flex-1 px-3 text-sm text-ink outline-none" required />
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-ink">Email address</label>
-                <input className={inputClass} placeholder="Email" type="email" value={form.email} onChange={set("email")} />
+                <input name="email" className={inputClass} placeholder="Email" type="email" required />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-semibold text-ink">Phone number</label>
-                <input className={inputClass} placeholder="090873636366" value={form.phone} onChange={set("phone")} />
+                <input name="phone" className={inputClass} placeholder="090873636366" required />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right: card back preview */}
         <div className="overflow-hidden rounded-[10px] border border-border">
           <div className="border-b border-border py-4 text-center text-base font-bold text-ink">Card Back</div>
           <div className="p-6">
@@ -156,9 +146,15 @@ function AddContractorTab() {
         </div>
       </div>
 
+      {error && (
+        <p role="alert" className="mt-6 rounded-[4px] bg-red-light px-4 py-3 text-center text-sm text-red">
+          {error}
+        </p>
+      )}
+
       <div className="mt-8 flex justify-center">
-        <Button type="submit" className="h-[52px] w-[390px]">
-          Add contractor
+        <Button type="submit" className="h-[52px] w-[390px]" disabled={busy}>
+          {busy ? "Adding…" : "Add contractor"}
         </Button>
       </div>
 
@@ -169,7 +165,9 @@ function AddContractorTab() {
             <PermitBack />
           </div>
           <div className="mt-6 text-center">
-            <button className="text-sm font-semibold text-primary hover:underline">Print ID</button>
+            <button onClick={() => window.print()} className="text-sm font-semibold text-primary hover:underline">
+              Print ID
+            </button>
           </div>
         </div>
       </Modal>
@@ -177,7 +175,21 @@ function AddContractorTab() {
   );
 }
 
-function ContractorListTab() {
+function ContractorListTab({ canManage }: { canManage: boolean }) {
+  const { data, loading, error, reload, setData } = useApi<Contractor[]>(() => contractorsApi.list(), []);
+  const rows = data ?? [];
+
+  async function revoke(contractor: Contractor) {
+    const reason = window.prompt(`Why is ${contractor.name}'s access being revoked?`);
+    if (!reason) return;
+    try {
+      const updated = await contractorsApi.revoke(contractor._id, reason);
+      setData((prev) => (prev ?? []).map((c) => (c._id === updated._id ? updated : c)));
+    } catch {
+      reload();
+    }
+  }
+
   const columns: Column<Contractor>[] = [
     { key: "name", header: "Name", render: (c) => c.name },
     { key: "companyName", header: "Company", render: (c) => c.companyName },
@@ -186,38 +198,78 @@ function ContractorListTab() {
     { key: "email", header: "Email address", render: (c) => c.email },
     { key: "validityTo", header: "Expiring date", render: (c) => formatDate(c.validityTo) },
   ];
-  return <DataTable columns={columns} rows={mockContractors} />;
-}
 
-function CheckInTab() {
-  const [query, setQuery] = useState("");
-  const [found, setFound] = useState<Contractor | null>(null);
-
-  function handleSearch(e: FormEvent) {
-    e.preventDefault();
-    const match = mockContractors.find(
-      (c) =>
-        c.idNumber.toLowerCase().includes(query.toLowerCase()) || c.name.toLowerCase().includes(query.toLowerCase()),
-    );
-    setFound(match ?? null);
+  if (canManage) {
+    columns.push({
+      key: "action",
+      header: "",
+      width: "110px",
+      render: (c) =>
+        c.status === "active" ? (
+          <button onClick={() => revoke(c)} className="text-sm text-red hover:underline">
+            Revoke
+          </button>
+        ) : (
+          <span className="text-sm text-muted">Revoked</span>
+        ),
+    });
   }
 
-  const visits = found ? mockContractorVisits[found._id] ?? [] : [];
+  if (loading) return <p className="py-16 text-center text-sm text-muted">Loading contractors&hellip;</p>;
+  if (error) return <p className="py-16 text-center text-sm text-red">{error}</p>;
+  return <DataTable columns={columns} rows={rows} />;
+}
+
+function CheckInTab({ canCheckIn }: { canCheckIn: boolean }) {
+  const [query, setQuery] = useState("");
+  const [found, setFound] = useState<Contractor | null>(null);
+  const [visits, setVisits] = useState<ContractorVisit[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSearch(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    try {
+      const results = await contractorsApi.list({ q: query });
+      const match = results[0] ?? null;
+      setFound(match);
+      setVisits(match ? await contractorsApi.visits(match._id).catch(() => []) : []);
+      if (!match) setError("No contractor matched that ID or name.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.messages.join(" ") : "Search failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function act(kind: "in" | "out") {
+    if (!found) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = kind === "in" ? await contractorsApi.checkIn(found._id) : await contractorsApi.checkOut(found._id);
+      setFound(updated);
+      setVisits(await contractorsApi.visits(found._id).catch(() => visits));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.messages.join(" ") : "That action failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 gap-0 overflow-hidden rounded-[10px] border border-border lg:grid-cols-2">
-      {/* Left: search + contractor */}
       <div className="border-b border-border lg:border-b-0 lg:border-r">
         <form onSubmit={handleSearch} className="flex items-center gap-4 border-b border-border px-8 py-6">
-          <div className="relative flex-1">
-            <input
-              className="h-12 w-full rounded-[4px] border border-border bg-white px-4 text-sm text-ink outline-none placeholder:text-muted focus:border-primary"
-              placeholder="Enter visitor ID or name"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </div>
-          <Button type="submit" className="px-7">
+          <input
+            className="h-12 w-full flex-1 rounded-[4px] border border-border bg-white px-4 text-sm text-ink outline-none placeholder:text-muted focus:border-primary"
+            placeholder="Enter visitor ID or name"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <Button type="submit" className="px-7" disabled={busy}>
             Search
           </Button>
         </form>
@@ -238,10 +290,7 @@ function CheckInTab() {
                 ["Name", found?.name],
                 ["Company name", found?.companyName],
                 ["Email address", found?.email],
-                [
-                  "Validity period",
-                  found ? `${formatDate(found.validityFrom)} - ${formatDate(found.validityTo)}` : undefined,
-                ],
+                ["Validity period", found ? `${formatDate(found.validityFrom)} - ${formatDate(found.validityTo)}` : undefined],
                 ["ID number", found?.idNumber],
                 ["Active", found ? (found.status === "active" ? "Yes" : "No") : undefined],
               ].map(([label, value]) => (
@@ -251,27 +300,34 @@ function CheckInTab() {
                 </div>
               ))}
             </div>
+
+            {error && <p className="mb-3 text-center text-xs text-red">{error}</p>}
+
             <div className="flex flex-col gap-2.5">
-              <Button fullWidth>Sign In</Button>
-              <Button fullWidth variant="destructive">
+              <Button fullWidth disabled={!found || busy || !canCheckIn} onClick={() => act("in")}>
+                Sign In
+              </Button>
+              <Button fullWidth variant="destructive" disabled={!found || busy || !canCheckIn} onClick={() => act("out")}>
                 Sign Out
               </Button>
-              <Button fullWidth variant="muted">
+              <Button fullWidth variant="muted" disabled={!found} onClick={() => setFound(null)}>
                 Deny Entry
               </Button>
             </div>
+            {!canCheckIn && found && (
+              <p className="mt-3 text-center text-xs text-muted">Only Security Officers can check contractors in or out.</p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Right: history */}
       <div>
         <div className="border-b border-border py-4 text-center text-base font-bold text-ink">History</div>
-        <div className="relative min-h-[420px]">
+        <div className="min-h-[420px]">
           {visits.length === 0 ? (
             <EmptyState />
           ) : (
-            <div className="relative px-8 py-6">
+            <div className="px-8 py-6">
               {visits.map((v) => (
                 <div key={v._id} className="border-b border-divider py-3 text-sm">
                   <p className="font-semibold text-ink">In: {formatDateTime(v.checkedInAt)}</p>

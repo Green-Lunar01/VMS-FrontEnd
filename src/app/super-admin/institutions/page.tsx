@@ -2,10 +2,15 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/Button";
 import { InstitutionDetailDrawer } from "@/components/dashboard/InstitutionDetailDrawer";
-import { mockInstitutions } from "@/data/mock-data";
+import { institutionsApi } from "@/lib/api/endpoints";
+import { ApiError } from "@/lib/api/client";
+import { useApi } from "@/lib/api/useApi";
+import { setStoredTokens, setStoredUser } from "@/lib/auth/storage";
+import { ROLE_HOME } from "@/lib/auth/AuthProvider";
 import type { Institution } from "@/lib/types";
 
 const inputClass =
@@ -25,9 +30,30 @@ function BigTab({ label, active, onClick }: { label: string; active: boolean; on
 }
 
 export default function InstitutionsPage() {
+  const router = useRouter();
   const [tab, setTab] = useState<"register" | "list">("list");
-  const [institutions, setInstitutions] = useState(mockInstitutions);
   const [selected, setSelected] = useState<Institution | null>(null);
+
+  const { data, loading, error, reload, setData } = useApi<Institution[]>(() => institutionsApi.list(), []);
+  const institutions = data ?? [];
+
+  async function toggleStatus(inst: Institution) {
+    const updated =
+      inst.status === "active"
+        ? await institutionsApi.deactivate(inst._id)
+        : await institutionsApi.activate(inst._id);
+    setData((prev) => (prev ?? []).map((i) => (i._id === updated._id ? updated : i)));
+    setSelected((cur) => (cur && cur._id === updated._id ? updated : cur));
+  }
+
+  /** Swaps this session's tokens for one acting as the institution's admin. */
+  async function impersonate(inst: Institution) {
+    const res = await institutionsApi.impersonate(inst._id);
+    setStoredTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+    setStoredUser(res.user);
+    router.replace(ROLE_HOME[res.user.role]);
+    router.refresh();
+  }
 
   const columns: Column<Institution>[] = [
     { key: "name", header: "Name", render: (i) => i.name },
@@ -58,40 +84,68 @@ export default function InstitutionsPage() {
 
       {tab === "list" ? (
         <div className="pt-8">
-          <DataTable
-            columns={columns}
-            rows={institutions}
-            minHeight={520}
-            onRowClick={(i) => setSelected(i)}
-            selectedId={selected?._id}
-          />
+          {loading ? (
+            <p className="py-16 text-center text-sm text-muted">Loading institutions&hellip;</p>
+          ) : error ? (
+            <p className="py-16 text-center text-sm text-red">{error}</p>
+          ) : (
+            <DataTable
+              columns={columns}
+              rows={institutions}
+              minHeight={520}
+              onRowClick={(i) => setSelected(i)}
+              selectedId={selected?._id}
+            />
+          )}
         </div>
       ) : (
-        <RegisterInstitutionForm />
+        <RegisterInstitutionForm
+          onDone={() => {
+            reload();
+            setTab("list");
+          }}
+        />
       )}
 
       <InstitutionDetailDrawer
         institution={selected}
         open={!!selected}
         onClose={() => setSelected(null)}
-        onToggleStatus={(inst) => {
-          setInstitutions((list) =>
-            list.map((i) => (i._id === inst._id ? { ...i, status: i.status === "active" ? "inactive" : "active" } : i)),
-          );
-          setSelected((cur) =>
-            cur && cur._id === inst._id
-              ? { ...cur, status: cur.status === "active" ? "inactive" : "active" }
-              : cur,
-          );
-        }}
+        onToggleStatus={toggleStatus}
+        onImpersonate={impersonate}
       />
     </div>
   );
 }
 
-function RegisterInstitutionForm() {
-  function handleSubmit(e: FormEvent) {
+function RegisterInstitutionForm({ onDone }: { onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const password = String(form.get("password") ?? "");
+    if (password !== String(form.get("confirmPassword") ?? "")) {
+      setError("The passwords don't match.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await institutionsApi.create({
+        name: String(form.get("name") ?? ""),
+        email: String(form.get("email") ?? ""),
+        address: String(form.get("address") ?? ""),
+        phone: String(form.get("phone") ?? ""),
+        password,
+      });
+      onDone();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.messages.join(" ") : "Could not register this institution.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -102,25 +156,38 @@ function RegisterInstitutionForm() {
         </div>
         <div className="flex flex-col gap-5 px-12 py-9">
           <Field label="Organization name">
-            <input className={inputClass} placeholder="Organization name" required />
+            <input name="name" className={inputClass} placeholder="Organization name" required />
           </Field>
           <Field label="Email address">
-            <input className={inputClass} type="email" placeholder="DHQ@gmail.com" required />
+            <input name="email" className={inputClass} type="email" placeholder="DHQ@gmail.com" required />
           </Field>
           <Field label="Organization address">
-            <input className={inputClass} placeholder="Area 7, Garki, Abuja" required />
+            <input name="address" className={inputClass} placeholder="Area 7, Garki, Abuja" required />
           </Field>
           <Field label="Phone number">
-            <input className={inputClass} placeholder="0909987" required />
+            <input name="phone" className={inputClass} placeholder="0909987" required />
           </Field>
           <Field label="Password">
-            <input className={inputClass} type="password" placeholder="••••••••••••••••" required />
+            <input name="password" className={inputClass} type="password" placeholder="••••••••••••••••" required />
           </Field>
           <Field label="Confirm password">
-            <input className={inputClass} type="password" placeholder="••••••••••••••••" required />
+            <input
+              name="confirmPassword"
+              className={inputClass}
+              type="password"
+              placeholder="••••••••••••••••"
+              required
+            />
           </Field>
-          <Button type="submit" fullWidth className="mt-2 h-[52px]">
-            Register Institution
+
+          {error && (
+            <p role="alert" className="rounded-[4px] bg-red-light px-4 py-3 text-sm text-red">
+              {error}
+            </p>
+          )}
+
+          <Button type="submit" fullWidth className="mt-2 h-[52px]" disabled={busy}>
+            {busy ? "Registering…" : "Register Institution"}
           </Button>
         </div>
       </form>

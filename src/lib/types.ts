@@ -73,6 +73,8 @@ export interface Officer {
   photoUrl?: string;
   user: User;
   createdAt: string;
+  /** Computed by GET /officers/:id only — "No of visitors received". */
+  visitorsReceivedCount?: number;
 }
 
 export interface Visitor {
@@ -151,9 +153,9 @@ export interface AppNotification {
   _id: string;
   type: NotificationType;
   /** Headline shown in bold in the feed, e.g. "Visitor submitted". */
-  title: string;
+  title?: string;
   /** Green sub-line naming the person involved, e.g. "Musa John". */
-  subject: string;
+  subject?: string;
   message?: string;
   read: boolean;
   createdAt: string;

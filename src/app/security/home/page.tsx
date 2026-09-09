@@ -1,8 +1,8 @@
 "use client";
 
 import { HomeBoard } from "@/components/dashboard/HomeBoard";
-import { mockVisitors } from "@/data/mock-data";
 
 export default function SecurityHomePage() {
-  return <HomeBoard visitors={mockVisitors} board="default" />;
+  // Security can onboard walk-ins and sign visitors in/out from the queues.
+  return <HomeBoard canOnboardWalkIn canApprove />;
 }

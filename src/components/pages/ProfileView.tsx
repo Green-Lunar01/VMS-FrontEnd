@@ -7,8 +7,9 @@ import { PageTitle, PageCard } from "@/components/dashboard/PageHeader";
 import { TextTabs } from "@/components/ui/Tabs";
 import { Icon } from "@/components/icons/Icon";
 import { PencilEdit02Icon, ViewOffSlashIcon, ViewIcon } from "@hugeicons/core-free-icons";
-import { mockInstitution } from "@/data/mock-data";
-import { DEFAULT_SESSIONS } from "@/lib/mock-session";
+import { institutionsApi, usersApi } from "@/lib/api/endpoints";
+import { useApi } from "@/lib/api/useApi";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 const ROLE_DISPLAY: Record<string, string> = {
   institution_admin: "Int",
@@ -20,20 +21,56 @@ const ROLE_DISPLAY: Record<string, string> = {
 const inputClass =
   "h-11 w-full rounded-[4px] border border-border bg-white px-3.5 text-sm text-ink outline-none transition-colors focus:border-primary";
 
-export function PhotoBlock() {
+export function PhotoBlock({
+  isOrganization,
+  onUploaded,
+}: {
+  isOrganization?: boolean;
+  onUploaded?: (user: import("@/lib/types").User) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  async function upload(file: File) {
+    setBusy(true);
+    try {
+      if (isOrganization) {
+        const inst = await institutionsApi.uploadMyLogo(file);
+        if (inst.logoUrl) setPreview(inst.logoUrl);
+      } else {
+        const updated = await usersApi.uploadPhoto(file);
+        if (updated.photoUrl) setPreview(updated.photoUrl);
+        onUploaded?.(updated);
+      }
+    } catch {
+      window.alert("Upload failed. Images only, 5MB max.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="flex items-center gap-6 border-b border-divider pb-7">
       <Image
-        src="/branding/avatar-placeholder.png"
+        src={preview ?? "/branding/avatar-placeholder.png"}
         alt=""
         width={120}
         height={120}
         className="h-[120px] w-[120px] rounded-full object-cover"
       />
       <div>
-        <button className="rounded-[4px] border border-border bg-white px-5 py-2.5 text-sm text-ink transition-colors hover:bg-grey">
-          Upload&nbsp; new photo
-        </button>
+        <label className="inline-block cursor-pointer rounded-[4px] border border-border bg-white px-5 py-2.5 text-sm text-ink transition-colors hover:bg-grey">
+          {busy ? "Uploading\u2026" : "Upload\u00a0 new photo"}
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void upload(file);
+            }}
+          />
+        </label>
         <p className="mt-2 text-xs leading-relaxed text-muted">
           Atleast 800 by 800 px recommended.
           <br />
@@ -52,8 +89,9 @@ export function ProfileView({
   changePasswordHref: string;
 }) {
   const [tab, setTab] = useState("personal");
-  const session = DEFAULT_SESSIONS[role];
+  const { user, setUser } = useAuth();
   const showOrganization = role === "institution_admin";
+  const institution = useApi(() => institutionsApi.me(), [], showOrganization);
 
   return (
     <div>
@@ -73,7 +111,7 @@ export function ProfileView({
             />
           )}
 
-          <PhotoBlock />
+          <PhotoBlock isOrganization={tab === "organization" && showOrganization} onUploaded={setUser} />
 
           {tab === "personal" || !showOrganization ? (
             <>
@@ -83,9 +121,9 @@ export function ProfileView({
               </div>
               <div className="rounded-[10px] border border-border px-10 py-9">
                 <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-                  <ReadField label="Full name" value={session.name} />
-                  <ReadField label="Email address" value={session.email} />
-                  <ReadField label="Role" value={ROLE_DISPLAY[role]} />
+                  <ReadField label="Full name" value={user?.name ?? "—"} />
+                  <ReadField label="Email address" value={user?.email ?? "—"} />
+                  <ReadField label="Role" value={ROLE_DISPLAY[user?.role ?? role]} />
                 </div>
                 <PasswordBlock href={changePasswordHref} />
               </div>
@@ -97,9 +135,9 @@ export function ProfileView({
               </div>
               <div className="max-w-[760px] rounded-[10px] border border-border px-14 py-10">
                 <div className="flex flex-col gap-5">
-                  <LabelledInput label="Organization name" defaultValue={mockInstitution.name} />
-                  <LabelledInput label="Email address" defaultValue="DHQ@gmail.com" />
-                  <LabelledInput label="Organization address" defaultValue={mockInstitution.address} />
+                  <LabelledInput label="Organization name" defaultValue={institution.data?.name ?? ""} />
+                  <LabelledInput label="Email address" defaultValue={institution.data?.email ?? ""} />
+                  <LabelledInput label="Organization address" defaultValue={institution.data?.address ?? ""} />
                   <PasswordField href={changePasswordHref} />
                 </div>
               </div>

@@ -3,9 +3,10 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/icons/Icon";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import {
   DashboardSquare01Icon,
   BankIcon,
@@ -25,7 +26,7 @@ const NAV = [
  */
 export function PlatformShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const { logout } = useAuth();
 
   return (
     <div className="flex min-h-screen bg-grey">
@@ -53,7 +54,7 @@ export function PlatformShell({ children }: { children: ReactNode }) {
           })}
 
           <button
-            onClick={() => router.push("/login")}
+            onClick={logout}
             className="mt-6 flex items-center gap-3.5 px-6 py-3 text-[15px] text-red transition-colors hover:bg-red-light"
           >
             <Icon icon={Logout03Icon} size={22} strokeWidth={1.6} />

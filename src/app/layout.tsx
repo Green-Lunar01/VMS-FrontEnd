@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Montserrat_Underline } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/lib/auth/AuthProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${inter.variable} ${montserratUnderline.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-grey font-sans text-ink">{children}</body>
+      <body className="min-h-full flex flex-col bg-grey font-sans text-ink">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

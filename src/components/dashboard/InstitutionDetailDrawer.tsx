@@ -5,7 +5,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/icons/Icon";
-import { Cancel01Icon, MoreHorizontalIcon, ViewIcon, ViewOffSlashIcon, Home01Icon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, MoreHorizontalIcon, Home01Icon } from "@hugeicons/core-free-icons";
 import type { Institution } from "@/lib/types";
 
 function Row({ label, value }: { label: string; value?: string }) {
@@ -32,11 +32,10 @@ export function InstitutionDetailDrawer({
   institution: Institution | null;
   open: boolean;
   onClose: () => void;
-  onToggleStatus?: (institution: Institution) => void;
-  onImpersonate?: (institution: Institution) => void;
+  onToggleStatus?: (institution: Institution) => Promise<void> | void;
+  onImpersonate?: (institution: Institution) => Promise<void> | void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <Drawer
@@ -68,7 +67,7 @@ export function InstitutionDetailDrawer({
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    onToggleStatus?.(institution);
+                    void onToggleStatus?.(institution);
                   }}
                   className="block w-full whitespace-nowrap px-5 py-2 text-left text-sm text-ink hover:bg-grey"
                 >
@@ -89,21 +88,9 @@ export function InstitutionDetailDrawer({
           <Row label="Organization address" value={institution.address} />
           <Row label="Phone number" value={institution.phone} />
 
-          <div className="flex items-start gap-4 py-[7px]">
-            <span className="w-[140px] shrink-0 text-sm text-muted">Password:</span>
-            <span className="flex flex-1 items-center justify-between gap-3 text-sm text-ink">
-              {showPassword ? "StrongPass1!" : "****************"}
-              <button
-                onClick={() => setShowPassword((s) => !s)}
-                className="text-ink hover:opacity-60"
-                aria-label="Toggle password"
-              >
-                <Icon icon={showPassword ? ViewIcon : ViewOffSlashIcon} size={19} strokeWidth={1.6} />
-              </button>
-            </span>
-          </div>
+          <Row label="Status" value={institution.status === "active" ? "Active" : "Deactivated"} />
 
-          <Button variant="outline" fullWidth className="mt-9 h-[52px]" onClick={() => onImpersonate?.(institution)}>
+          <Button variant="outline" fullWidth className="mt-9 h-[52px]" onClick={() => void onImpersonate?.(institution)}>
             Act as User
           </Button>
         </div>

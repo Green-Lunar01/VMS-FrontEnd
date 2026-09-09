@@ -4,14 +4,14 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { InstitutionCrest } from "@/components/layout/InstitutionCrest";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/icons/Icon";
 import { Call02Icon, Notification01Icon, UserGroup03Icon, Logout03Icon } from "@hugeicons/core-free-icons";
 import { NotificationsDrawer } from "@/components/dashboard/NotificationsDrawer";
-import type { AppNotification } from "@/lib/types";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 /**
  * Officer/Soldier (host) shell: crest sidebar with a single "Visitor" entry, and a
@@ -19,15 +19,13 @@ import type { AppNotification } from "@/lib/types";
  */
 export function HostShell({
   userName,
-  notifications = [],
   children,
 }: {
   userName: string;
-  notifications?: AppNotification[];
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const { logout } = useAuth();
   const [notifOpen, setNotifOpen] = useState(false);
   const active = pathname?.startsWith("/host/dashboard");
 
@@ -53,7 +51,7 @@ export function HostShell({
           </Link>
 
           <button
-            onClick={() => router.push("/login")}
+            onClick={logout}
             className="mt-6 flex items-center gap-3.5 px-6 py-3 text-[15px] text-red transition-colors hover:bg-red-light"
           >
             <Icon icon={Logout03Icon} size={22} strokeWidth={1.6} />
@@ -90,7 +88,7 @@ export function HostShell({
         <main className="flex-1">{children}</main>
       </div>
 
-      <NotificationsDrawer open={notifOpen} onClose={() => setNotifOpen(false)} notifications={notifications} />
+      <NotificationsDrawer open={notifOpen} onClose={() => setNotifOpen(false)} />
     </div>
   );
 }

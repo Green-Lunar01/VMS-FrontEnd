@@ -7,7 +7,12 @@ import { VisitorQueueCard } from "@/components/dashboard/VisitorQueueCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/icons/Icon";
 import { ArrowLeft01Icon, ArrowRight01Icon, Search01Icon, Calendar03Icon } from "@hugeicons/core-free-icons";
-import type { Visitor } from "@/lib/types";
+import { WalkInForm } from "@/components/dashboard/WalkInForm";
+import { visitorsApi } from "@/lib/api/endpoints";
+import { ApiError } from "@/lib/api/client";
+import { useApi } from "@/lib/api/useApi";
+import { ApproveVisitorModal } from "@/components/dashboard/ApproveVisitorModal";
+import type { ModeOfEntry, Visitor } from "@/lib/types";
 
 function QueueSearch({ withDate }: { withDate?: boolean }) {
   return (
@@ -39,6 +44,8 @@ function QueueColumn({
   variant,
   withDate,
   notifyHost,
+  loading,
+  onAction,
 }: {
   title: string;
   tone: "teal" | "ink" | "green" | "red";
@@ -47,6 +54,8 @@ function QueueColumn({
   variant: "submitted" | "cancelled" | "signed_in" | "signed_out";
   withDate?: boolean;
   notifyHost?: boolean;
+  loading?: boolean;
+  onAction?: (visitor: Visitor) => void;
 }) {
   return (
     <div className="flex min-w-0 flex-col">
@@ -55,16 +64,25 @@ function QueueColumn({
         <div className="relative rounded-[10px] bg-white/70">
           <QueueSearch withDate={withDate} />
           <div className="max-h-[880px] space-y-4 overflow-y-auto px-4 pb-4">
-            {visitors.length === 0 ? (
+            {loading ? (
+              <p className="py-16 text-center text-sm text-muted">Loading&hellip;</p>
+            ) : visitors.length === 0 ? (
               <EmptyState />
             ) : (
               visitors.map((v) => (
-                <VisitorQueueCard key={v._id} visitor={v} variant={variant} notifyHost={notifyHost} />
+                <VisitorQueueCard
+                  key={v._id}
+                  visitor={v}
+                  variant={variant}
+                  notifyHost={notifyHost}
+                  onAction={onAction ? () => onAction(v) : undefined}
+                />
               ))
             )}
           </div>
         </div>
       </div>
+
     </div>
   );
 }
@@ -74,21 +92,83 @@ function QueueColumn({
  * columns. The topbar's "Signed In / Signed Out Visitors" links flip the pair,
  * and the side arrows step between them.
  */
-export function HomeBoard({ visitors, board }: { visitors: Visitor[]; board: "default" | "signed" }) {
+export function HomeBoard({
+  board = "default",
+  canOnboardWalkIn = false,
+  canApprove = false,
+}: {
+  board?: "default" | "signed";
+  /** Security Officers can register a walk-in; the panel is theirs alone. */
+  canOnboardWalkIn?: boolean;
+  canApprove?: boolean;
+}) {
   const [view, setView] = useState<"default" | "signed">(board);
+  const [panel, setPanel] = useState<"dispatch" | "walkin">("dispatch");
+  const [approving, setApproving] = useState<Visitor | null>(null);
 
-  const submitted = visitors.filter((v) => v.status === "submitted" || v.status === "awaiting_approval");
+  const { data, loading, error, reload, setData } = useApi<Visitor[]>(() => visitorsApi.today(), []);
+  const visitors = data ?? [];
+
+  const submitted = visitors.filter(
+    (v) => v.status === "submitted" || v.status === "awaiting_approval" || v.status === "confirmed",
+  );
   const cancelled = visitors.filter((v) => v.status === "cancelled");
   const signedIn = visitors.filter((v) => v.status === "signed_in");
   const signedOut = visitors.filter((v) => v.status === "signed_out");
 
+  function patchRow(updated: Visitor) {
+    setData((prev) => (prev ?? []).map((v) => (v._id === updated._id ? updated : v)));
+  }
+
+  async function handleApprove(guestTagNumber: string, modeOfEntry: ModeOfEntry) {
+    if (!approving) return;
+    patchRow(await visitorsApi.approve(approving._id, guestTagNumber, modeOfEntry));
+  }
+
+  async function handleSignOut(visitor: Visitor) {
+    try {
+      patchRow(await visitorsApi.signOut(visitor._id));
+    } catch (err) {
+      window.alert(err instanceof ApiError ? err.messages.join(" ") : "Could not sign this visitor out.");
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[352px_1fr]">
+      {error && (
+        <button onClick={reload} className="col-span-full rounded-[6px] bg-red-light px-4 py-3 text-sm text-red">
+          {error} &mdash; retry
+        </button>
+      )}
       <div className="flex flex-col">
-        <QueueHeader title="Onboard New Dispatcher" tone="indigo" className="mb-4" />
+        <QueueHeader
+          title={panel === "dispatch" ? "Onboard New Dispatcher" : "Onboard New Visitors"}
+          tone="indigo"
+          className="mb-4"
+        />
+        {canOnboardWalkIn && (
+          <div className="mb-3 flex gap-2">
+            <button
+              onClick={() => setPanel("dispatch")}
+              className={`flex-1 rounded-[6px] px-3 py-2 text-xs font-semibold transition-colors ${
+                panel === "dispatch" ? "bg-primary text-white" : "bg-grey text-muted hover:text-ink"
+              }`}
+            >
+              Dispatcher
+            </button>
+            <button
+              onClick={() => setPanel("walkin")}
+              className={`flex-1 rounded-[6px] px-3 py-2 text-xs font-semibold transition-colors ${
+                panel === "walkin" ? "bg-primary text-white" : "bg-grey text-muted hover:text-ink"
+              }`}
+            >
+              Visitor
+            </button>
+          </div>
+        )}
         <div className="relative flex-1 rounded-[10px] bg-grey/60 p-3">
           <div className="relative rounded-[10px] bg-white px-6 py-6">
-            <DispatchForm />
+            {panel === "walkin" && canOnboardWalkIn ? <WalkInForm onCreated={reload} /> : <DispatchForm />}
           </div>
         </div>
       </div>
@@ -119,6 +199,8 @@ export function HomeBoard({ visitors, board }: { visitors: Visitor[]; board: "de
                 visitors={submitted}
                 variant="submitted"
                 notifyHost
+                loading={loading}
+                onAction={canApprove ? (v) => setApproving(v) : undefined}
               />
               <QueueColumn
                 title="Cancelled Visitors"
@@ -126,6 +208,7 @@ export function HomeBoard({ visitors, board }: { visitors: Visitor[]; board: "de
                 count={cancelled.length}
                 visitors={cancelled}
                 variant="cancelled"
+                loading={loading}
               />
             </>
           ) : (
@@ -137,6 +220,8 @@ export function HomeBoard({ visitors, board }: { visitors: Visitor[]; board: "de
                 visitors={signedIn}
                 variant="signed_in"
                 withDate
+                loading={loading}
+                onAction={canApprove ? handleSignOut : undefined}
               />
               <QueueColumn
                 title="Signed Out Visitors"
@@ -145,11 +230,19 @@ export function HomeBoard({ visitors, board }: { visitors: Visitor[]; board: "de
                 visitors={signedOut}
                 variant="signed_out"
                 withDate
+                loading={loading}
               />
             </>
           )}
         </div>
       </div>
+
+      <ApproveVisitorModal
+        visitor={approving}
+        open={!!approving}
+        onClose={() => setApproving(null)}
+        onApprove={handleApprove}
+      />
     </div>
   );
 }

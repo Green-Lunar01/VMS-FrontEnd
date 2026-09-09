@@ -4,58 +4,49 @@ import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/Button";
-import { Dropdown } from "@/components/ui/Dropdown";
 import { SearchField } from "@/components/ui/Toolbar";
 import { Icon } from "@/components/icons/Icon";
 import { PencilEdit02Icon, Delete02Icon } from "@hugeicons/core-free-icons";
-import { DEFAULT_SESSIONS } from "@/lib/mock-session";
+import { usersApi } from "@/lib/api/endpoints";
+import { ApiError } from "@/lib/api/client";
+import { useApi } from "@/lib/api/useApi";
 import { formatDateTime } from "@/lib/utils";
+import type { User } from "@/lib/types";
 
 const inputClass =
   "h-11 w-full rounded-[4px] border border-border bg-white px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-border focus:border-primary";
-
-const ROLE_OPTIONS = [
-  { label: "Super Admin", value: "Super Admin" },
-  { label: "Employee", value: "Employee" },
-];
-
-interface PlatformAdmin {
-  _id: string;
-  name: string;
-  role: string;
-  email: string;
-  createdAt: string;
-  status: "active" | "inactive";
-}
-
-const ADMINS: PlatformAdmin[] = [
-  { _id: "p1", name: "Ronald Richards", role: "Super Admin", email: "debbie.baker@example.com", createdAt: "2025-02-22T17:00:00.000Z", status: "active" },
-  { _id: "p2", name: "Robert Fox", role: "Employee", email: "nevaeh.simmons@example.com", createdAt: "2025-02-22T17:00:00.000Z", status: "active" },
-  { _id: "p3", name: "Darrell Steward", role: "Employee", email: "nathan.roberts@example.com", createdAt: "2025-02-22T17:00:00.000Z", status: "active" },
-  { _id: "p4", name: "Jacob Jones", role: "Employee", email: "deanna.curtis@example.com", createdAt: "2025-02-22T17:00:00.000Z", status: "active" },
-  { _id: "p5", name: "Darlene Robertson", role: "Employee", email: "willie.jennings@example.com", createdAt: "2025-02-22T17:00:00.000Z", status: "active" },
-  { _id: "p6", name: "Brooklyn Simmons", role: "Employee", email: "kenzi.lawson@example.com", createdAt: "2025-02-22T17:00:00.000Z", status: "inactive" },
-  { _id: "p7", name: "Savannah Nguyen", role: "Employee", email: "felicia.reid@example.com", createdAt: "2025-02-22T17:00:00.000Z", status: "inactive" },
-  { _id: "p8", name: "Kathryn Murphy", role: "Employee", email: "alma.lawson@example.com", createdAt: "2025-02-22T17:00:00.000Z", status: "inactive" },
-  { _id: "p9", name: DEFAULT_SESSIONS.super_admin.name, role: "Super Admin", email: DEFAULT_SESSIONS.super_admin.email, createdAt: "2025-02-22T17:00:00.000Z", status: "active" },
-];
 
 export default function PlatformAdminsPage() {
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"admin" | "role">("admin");
   const [creating, setCreating] = useState(false);
-  const [editing, setEditing] = useState<PlatformAdmin | null>(null);
+  const [editing, setEditing] = useState<User | null>(null);
 
-  const rows = useMemo(
-    () => ADMINS.filter((a) => !query || [a.name, a.email].some((f) => f.toLowerCase().includes(query.toLowerCase()))),
-    [query],
-  );
+  const { data, loading, error, reload, setData } = useApi<User[]>(() => usersApi.list(), []);
 
-  const columns: Column<PlatformAdmin>[] = [
+  const rows = useMemo(() => {
+    const all = data ?? [];
+    const filtered = query
+      ? all.filter((a) => [a.name, a.email].some((f) => f?.toLowerCase().includes(query.toLowerCase())))
+      : all;
+    return view === "role" ? [...filtered].sort((a, b) => a.role.localeCompare(b.role)) : filtered;
+  }, [data, query, view]);
+
+  async function remove(user: User) {
+    if (!window.confirm(`Remove ${user.name}?`)) return;
+    try {
+      await usersApi.remove(user._id);
+      setData((prev) => (prev ?? []).filter((u) => u._id !== user._id));
+    } catch {
+      reload();
+    }
+  }
+
+  const columns: Column<User>[] = [
     { key: "name", header: "Name", render: (a) => a.name },
-    { key: "role", header: "Role", render: (a) => a.role },
+    { key: "role", header: "Role", render: (a) => (a.role === "super_admin" ? "Super Admin" : "Employee") },
     { key: "email", header: "Email address", width: "1.3fr", render: (a) => a.email },
-    { key: "createdAt", header: "Date created", render: (a) => formatDateTime(a.createdAt) },
+    { key: "createdAt", header: "Date created", render: (a) => (a.createdAt ? formatDateTime(a.createdAt) : "—") },
     {
       key: "status",
       header: "Status",
@@ -71,10 +62,17 @@ export default function PlatformAdminsPage() {
       width: "110px",
       render: (a) => (
         <div className="flex items-center gap-4">
-          <button onClick={() => { setEditing(a); setCreating(false); }} className="text-ink hover:opacity-60" aria-label="Edit">
+          <button
+            onClick={() => {
+              setEditing(a);
+              setCreating(false);
+            }}
+            className="text-ink hover:opacity-60"
+            aria-label="Edit"
+          >
             <Icon icon={PencilEdit02Icon} size={19} strokeWidth={1.75} />
           </button>
-          <button className="text-ink hover:opacity-60" aria-label="Delete">
+          <button onClick={() => remove(a)} className="text-ink hover:opacity-60" aria-label="Delete">
             <Icon icon={Delete02Icon} size={19} strokeWidth={1.75} />
           </button>
         </div>
@@ -135,7 +133,18 @@ export default function PlatformAdminsPage() {
       </div>
 
       {showForm ? (
-        <AdminForm admin={editing} onDone={() => { setCreating(false); setEditing(null); }} />
+        <AdminForm
+          admin={editing}
+          onDone={() => {
+            setCreating(false);
+            setEditing(null);
+            reload();
+          }}
+        />
+      ) : loading ? (
+        <p className="py-16 text-center text-sm text-muted">Loading admins&hellip;</p>
+      ) : error ? (
+        <p className="py-16 text-center text-sm text-red">{error}</p>
       ) : (
         <DataTable columns={columns} rows={rows} minHeight={520} />
       )}
@@ -143,12 +152,37 @@ export default function PlatformAdminsPage() {
   );
 }
 
-function AdminForm({ admin, onDone }: { admin: PlatformAdmin | null; onDone: () => void }) {
-  const [role, setRole] = useState(admin?.role ?? "Employee");
+function AdminForm({ admin, onDone }: { admin: User | null; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    onDone();
+    const form = new FormData(e.currentTarget);
+    const password = String(form.get("password") ?? "");
+    if (!admin && password !== String(form.get("confirmPassword") ?? "")) {
+      setError("The passwords don't match.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      if (admin) {
+        await usersApi.update(admin._id, { name: String(form.get("name") ?? "") });
+      } else {
+        // Platform admins are always super_admin — the API decides the role.
+        await usersApi.createPlatformAdmin({
+          name: String(form.get("name") ?? ""),
+          email: String(form.get("email") ?? ""),
+          password,
+        });
+      }
+      onDone();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.messages.join(" ") : "Could not save this admin.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -160,28 +194,52 @@ function AdminForm({ admin, onDone }: { admin: PlatformAdmin | null; onDone: () 
       <div className="grid grid-cols-1 gap-x-14 gap-y-6 py-8 md:grid-cols-2">
         <div className="flex flex-col gap-1.5 md:col-span-2">
           <label className="text-sm font-semibold text-ink">Full name</label>
-          <input className={inputClass} placeholder="Full name" defaultValue={admin?.name} required />
+          <input name="name" className={inputClass} placeholder="Full name" defaultValue={admin?.name} required />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-semibold text-ink">Email</label>
-          <input className={inputClass} type="email" placeholder="Email" defaultValue={admin?.email} required />
+          <input
+            name="email"
+            className={inputClass}
+            type="email"
+            placeholder="Email"
+            defaultValue={admin?.email}
+            disabled={!!admin}
+            required={!admin}
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-semibold text-ink">Role</label>
-          <Dropdown className="h-11 w-full" value={role} options={ROLE_OPTIONS} onChange={setRole} />
+          <input className={inputClass} value="Super Admin" readOnly disabled />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-semibold text-ink">Password</label>
-          <input className={inputClass} type="password" placeholder="Password" required={!admin} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-semibold text-ink">Confirm Password</label>
-          <input className={inputClass} type="password" placeholder="Confirm password" required={!admin} />
-        </div>
+        {!admin && (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-ink">Password</label>
+              <input name="password" className={inputClass} type="password" placeholder="Password" required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-ink">Confirm Password</label>
+              <input
+                name="confirmPassword"
+                className={inputClass}
+                type="password"
+                placeholder="Confirm password"
+                required
+              />
+            </div>
+          </>
+        )}
       </div>
 
-      <Button type="submit" className="px-8">
-        {admin ? "Update Admin" : "Create Admin"}
+      {error && (
+        <p role="alert" className="mb-5 rounded-[4px] bg-red-light px-4 py-3 text-sm text-red">
+          {error}
+        </p>
+      )}
+
+      <Button type="submit" className="px-8" disabled={busy}>
+        {busy ? "Saving…" : admin ? "Update Admin" : "Create Admin"}
       </Button>
     </form>
   );

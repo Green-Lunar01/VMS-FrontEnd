@@ -9,9 +9,11 @@ import { DataTable, type Column } from "@/components/ui/DataTable";
 import { AddOfficerModal } from "@/components/dashboard/AddOfficerModal";
 import { OfficerCredentialsModal } from "@/components/dashboard/OfficerCredentialsModal";
 import { SERVICE_OPTIONS } from "@/lib/filter-options";
-import { mockOfficers } from "@/data/mock-data";
 import { SERVICE_TYPE_LABEL } from "@/lib/labels";
-import type { Officer } from "@/lib/types";
+import { officersApi } from "@/lib/api/endpoints";
+import { useApi } from "@/lib/api/useApi";
+import { exportRowsToCsv } from "@/lib/csv";
+import type { Officer, ServiceType } from "@/lib/types";
 
 /**
  * Officers/Soldiers list. Institution Admins get the "Add new Officer/Soldier"
@@ -19,28 +21,40 @@ import type { Officer } from "@/lib/types";
  */
 export function OfficersView({ canManage = true }: { canManage?: boolean }) {
   const [query, setQuery] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const [serviceType, setServiceType] = useState("all");
-  const [view, setView] = useState<"add" | "list">("list");
   const [addOpen, setAddOpen] = useState(false);
-  const [credentialsFor, setCredentialsFor] = useState<Officer | null>(null);
+  const [selected, setSelected] = useState<Officer | null>(null);
 
-  const rows = useMemo(
-    () =>
-      mockOfficers.filter((o) => {
-        const matchesService = serviceType === "all" || o.serviceType === serviceType;
-        const matchesQuery =
-          !query ||
-          [o.name, o.rank, o.serviceNumber, o.branch, o.department].some((f) =>
-            f.toLowerCase().includes(query.toLowerCase()),
-          );
-        return matchesService && matchesQuery;
-      }),
-    [query, serviceType],
+  const params = useMemo(
+    () => ({ q: submittedQuery || undefined, serviceType: serviceType === "all" ? undefined : serviceType }),
+    [submittedQuery, serviceType],
   );
+
+  const { data, loading, error, reload } = useApi<Officer[]>(() => officersApi.list(params), [
+    params.q,
+    params.serviceType,
+  ]);
+
+  const rows = useMemo(() => data ?? [], [data]);
+
+  /** The list response omits visitorsReceivedCount; the single-record view has it. */
+  async function openOfficer(officer: Officer) {
+    setSelected(officer);
+    try {
+      setSelected(await officersApi.get(officer._id));
+    } catch {
+      /* keep the row data we already have */
+    }
+  }
 
   const columns: Column<Officer>[] = [
     { key: "name", header: "Name", render: (o) => o.name },
-    { key: "serviceType", header: "Service type", render: (o) => SERVICE_TYPE_LABEL[o.serviceType] },
+    {
+      key: "serviceType",
+      header: "Service type",
+      render: (o) => SERVICE_TYPE_LABEL[o.serviceType as ServiceType] ?? o.serviceType,
+    },
     { key: "rank", header: "Rank", render: (o) => o.rank },
     { key: "appointment", header: "Appointment", render: (o) => o.appointment },
     { key: "department", header: "Department", render: (o) => o.department },
@@ -55,54 +69,70 @@ export function OfficersView({ canManage = true }: { canManage?: boolean }) {
       <PageCard>
         <Toolbar>
           {canManage && (
-            <Button
-              className="shrink-0 px-5"
-              variant={view === "add" ? "primary" : "outline"}
-              onClick={() => {
-                setView("add");
-                setAddOpen(true);
-              }}
-            >
+            <Button className="shrink-0 px-5" variant="outline" onClick={() => setAddOpen(true)}>
               Add new Officer/Soldier
             </Button>
           )}
-          <Button className="shrink-0 px-5" variant={view === "list" ? "primary" : "outline"} onClick={() => setView("list")}>
+          <Button className="shrink-0 px-5" onClick={reload}>
             Officer/Soldier List
           </Button>
           <SearchField
             className="w-[170px] shrink-0"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && setSubmittedQuery(query)}
             placeholder="Search"
           />
-          <Button className="shrink-0 px-6">Search</Button>
+          <Button className="shrink-0 px-6" onClick={() => setSubmittedQuery(query)}>
+            Search
+          </Button>
           <Dropdown className="w-[180px] shrink-0" value={serviceType} options={SERVICE_OPTIONS} onChange={setServiceType} />
-          <Button className="ml-auto shrink-0 px-6">Export</Button>
+          <Button
+            className="ml-auto shrink-0 px-6"
+            onClick={() =>
+              exportRowsToCsv<Officer>("officers", rows, [
+                ["Name", (o) => o.name],
+                ["Service type", (o) => o.serviceType],
+                ["Rank", (o) => o.rank],
+                ["Appointment", (o) => o.appointment],
+                ["Department", (o) => o.department],
+                ["Branch", (o) => o.branch],
+                ["Service no.", (o) => o.serviceNumber],
+              ])
+            }
+          >
+            Export
+          </Button>
         </Toolbar>
 
-        <div className="px-7 pb-2 pt-5">
+        <div className="flex items-center justify-between px-7 pb-2 pt-5">
           <p className="text-sm text-ink">Total Officers/Soldiers: {rows.length}</p>
+          {error && (
+            <button onClick={reload} className="text-sm text-red hover:underline">
+              {error} &mdash; retry
+            </button>
+          )}
         </div>
 
         <div className="px-7 pb-7">
-          <DataTable
-            columns={columns}
-            rows={rows}
-            leadingAvatar
-            avatarKey={(o) => o.photoUrl}
-            onRowClick={canManage ? (o) => setCredentialsFor(o) : undefined}
-          />
+          {loading ? (
+            <p className="py-16 text-center text-sm text-muted">Loading officers&hellip;</p>
+          ) : (
+            <DataTable
+              columns={columns}
+              rows={rows}
+              leadingAvatar
+              avatarKey={(o) => o.photoUrl}
+              onRowClick={canManage ? openOfficer : undefined}
+            />
+          )}
         </div>
       </PageCard>
 
       {canManage && (
         <>
-          <AddOfficerModal open={addOpen} onClose={() => setAddOpen(false)} />
-          <OfficerCredentialsModal
-            officer={credentialsFor}
-            open={!!credentialsFor}
-            onClose={() => setCredentialsFor(null)}
-          />
+          <AddOfficerModal open={addOpen} onClose={() => setAddOpen(false)} onCreated={reload} />
+          <OfficerCredentialsModal officer={selected} open={!!selected} onClose={() => setSelected(null)} />
         </>
       )}
     </div>

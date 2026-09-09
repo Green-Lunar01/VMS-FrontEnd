@@ -30,7 +30,7 @@ export function VisitorDetailDrawer({
   visitor: Visitor | null;
   open: boolean;
   onClose: () => void;
-  onBlacklist?: (visitor: Visitor) => void;
+  onBlacklist?: (visitor: Visitor, reason: string) => Promise<void> | void;
   canBlacklist?: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -65,9 +65,14 @@ export function VisitorDetailDrawer({
                   <button
                     onClick={() => {
                       setMenuOpen(false);
-                      onBlacklist?.(visitor);
+                      if (visitor.blacklisted) {
+                        void onBlacklist?.(visitor, "");
+                        return;
+                      }
+                      const reason = window.prompt("Reason for blacklisting this visitor?");
+                      if (reason) void onBlacklist?.(visitor, reason);
                     }}
-                    className="block w-full px-5 py-2 text-left text-sm text-ink hover:bg-grey"
+                    className="block w-full whitespace-nowrap px-5 py-2 text-left text-sm text-ink hover:bg-grey"
                   >
                     {visitor.blacklisted ? "Remove from blacklist" : "Blacklist"}
                   </button>

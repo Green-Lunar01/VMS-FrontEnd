@@ -5,6 +5,9 @@ import type { FormEvent } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { officersApi } from "@/lib/api/endpoints";
+import { ApiError } from "@/lib/api/client";
+import type { Officer } from "@/lib/types";
 
 const SERVICE_OPTIONS = [
   { label: "Army", value: "army" },
@@ -33,7 +36,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const inputClass =
   "h-11 w-full rounded-[4px] border border-border bg-white px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-border focus:border-primary";
 
-/** "Add new Officer/Soldier" — a popup in the Figma file, not a page. */
+/**
+ * "Add new Officer/Soldier" popup. No password field — the API generates a
+ * temporary one and emails it, with mustChangePassword set.
+ */
 export function AddOfficerModal({
   open,
   onClose,
@@ -41,16 +47,37 @@ export function AddOfficerModal({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreated?: (email: string) => void;
+  onCreated?: (officer: Officer) => void;
 }) {
   const [serviceType, setServiceType] = useState("army");
   const [rank, setRank] = useState("Lieutenant");
-  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    onCreated?.(email);
-    onClose();
+    const form = new FormData(e.currentTarget);
+    setBusy(true);
+    setError(null);
+    try {
+      const officer = await officersApi.create({
+        serviceType,
+        rank,
+        name: String(form.get("name") ?? ""),
+        appointment: String(form.get("appointment") ?? ""),
+        branch: String(form.get("branch") ?? ""),
+        department: String(form.get("department") ?? ""),
+        phone: String(form.get("phone") ?? ""),
+        serviceNumber: String(form.get("serviceNumber") ?? ""),
+        email: String(form.get("email") ?? ""),
+      });
+      onCreated?.(officer);
+      onClose();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.messages.join(" ") : "Could not add this officer.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -63,36 +90,35 @@ export function AddOfficerModal({
           <Dropdown className="h-11 w-full" value={rank} options={RANK_OPTIONS} onChange={setRank} />
         </Field>
         <Field label="Name">
-          <input className={inputClass} placeholder="Name" required />
+          <input name="name" className={inputClass} placeholder="Name" required />
         </Field>
         <Field label="Appointment">
-          <input className={inputClass} placeholder="Appointment" required />
+          <input name="appointment" className={inputClass} placeholder="Appointment" required />
         </Field>
         <Field label="Branch">
-          <input className={inputClass} placeholder="Branch" required />
+          <input name="branch" className={inputClass} placeholder="Branch" required />
         </Field>
         <Field label="Department">
-          <input className={inputClass} placeholder="Branch" required />
+          <input name="department" className={inputClass} placeholder="Branch" required />
         </Field>
         <Field label="Phone Number">
-          <input className={inputClass} placeholder="Phone number" type="tel" required />
+          <input name="phone" className={inputClass} placeholder="Phone number" type="tel" required />
         </Field>
         <Field label="Service No">
-          <input className={inputClass} placeholder="Phone number" required />
+          <input name="serviceNumber" className={inputClass} placeholder="Phone number" required />
         </Field>
         <Field label="Email">
-          <input
-            className={inputClass}
-            placeholder="Email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          <input name="email" className={inputClass} placeholder="Email" type="email" required />
         </Field>
 
-        <Button type="submit" fullWidth className="mt-3 h-12">
-          Add
+        {error && (
+          <p role="alert" className="rounded-[4px] bg-red-light px-4 py-3 text-sm text-red">
+            {error}
+          </p>
+        )}
+
+        <Button type="submit" fullWidth className="mt-3 h-12" disabled={busy}>
+          {busy ? "Adding…" : "Add"}
         </Button>
       </form>
     </Modal>

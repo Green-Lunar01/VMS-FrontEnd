@@ -9,8 +9,10 @@ import { Modal } from "@/components/ui/Modal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/icons/Icon";
 import { Camera01Icon, ArrowLeft01Icon, Search01Icon } from "@hugeicons/core-free-icons";
-import { mockVisitors } from "@/data/mock-data";
-import { DEFAULT_SESSIONS } from "@/lib/mock-session";
+import { visitorsApi } from "@/lib/api/endpoints";
+import { useApi } from "@/lib/api/useApi";
+import { ApiError } from "@/lib/api/client";
+import { useAuth } from "@/lib/auth/AuthProvider";
 import { ID_TYPE_LABEL, VISITOR_TYPE_LABEL } from "@/lib/labels";
 import { cn, formatDate } from "@/lib/utils";
 import type { Visitor, VisitorStatus } from "@/lib/types";
@@ -61,28 +63,86 @@ const STATUS_LABEL: Record<VisitorStatus, string> = {
 };
 
 export default function HostDashboardPage() {
-  const session = DEFAULT_SESSIONS.host;
+  const { user } = useAuth();
   const [tab, setTab] = useState<VisitorStatus | "all">("all");
   const [mode, setMode] = useState<"form" | "list">("form");
   const [selected, setSelected] = useState<Visitor | null>(null);
   const [query, setQuery] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [country, setCountry] = useState("Nigeria");
+  const [hostRank, setHostRank] = useState("Major");
+  const [visitorType, setVisitorType] = useState("family");
 
-  const myVisitors = useMemo(() => mockVisitors.filter((v) => v.host.name === session.name), [session.name]);
   const active = TABS.find((t) => t.value === tab)!;
 
-  const rows = useMemo(() => {
-    const byTab = tab === "all" ? myVisitors : myVisitors.filter((v) => v.status === tab);
-    return query ? byTab.filter((v) => v.name.toLowerCase().includes(query.toLowerCase())) : byTab;
-  }, [myVisitors, tab, query]);
+  const { data, loading, error, reload, setData } = useApi<Visitor[]>(
+    () =>
+      visitorsApi.mine({
+        status: tab === "all" ? undefined : tab,
+        q: submittedQuery || undefined,
+      }),
+    [tab, submittedQuery],
+    mode === "list",
+  );
+
+  const rows = useMemo(() => data ?? [], [data]);
+
+  function patchRow(updated: Visitor) {
+    setData((prev) => (prev ?? []).map((v) => (v._id === updated._id ? updated : v)));
+    setSelected((cur) => (cur && cur._id === updated._id ? updated : cur));
+  }
 
   // The design groups the feed by day, with a "Yesterday" divider.
   const today = rows.slice(0, Math.ceil(rows.length / 2));
   const yesterday = rows.slice(Math.ceil(rows.length / 2));
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setConfirmOpen(true);
+    const form = new FormData(e.currentTarget);
+    const escortNames = String(form.get("escortNames") ?? "")
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    setBusy(true);
+    setFormError(null);
+    try {
+      await visitorsApi.submit({
+        name: String(form.get("name") ?? ""),
+        phone: String(form.get("phone") ?? ""),
+        country,
+        idType: String(form.get("idType") ?? ""),
+        visitorType,
+        escortCount: Number(form.get("escortCount") ?? 0),
+        escortNames,
+        expectedDate: String(form.get("expectedDate") ?? ""),
+        expectedTimeFrom: String(form.get("expectedTimeFrom") ?? ""),
+        expectedTimeTo: String(form.get("expectedTimeTo") ?? ""),
+        phoneOrLaptop: false,
+      });
+      e.currentTarget.reset();
+      setConfirmOpen(true);
+      reload();
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.messages.join(" ") : "Could not submit this visitor.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function act(kind: "confirm" | "cancel" | "end", visitor: Visitor) {
+    setBusy(true);
+    try {
+      if (kind === "confirm") patchRow(await visitorsApi.confirm(visitor._id));
+      if (kind === "cancel") patchRow(await visitorsApi.cancel(visitor._id));
+      if (kind === "end") patchRow(await visitorsApi.endAppointment(visitor._id));
+    } catch (err) {
+      window.alert(err instanceof ApiError ? err.messages.join(" ") : "That action failed.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -150,44 +210,53 @@ export default function HostDashboardPage() {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-[136px] py-8">
               <Field label="Visitor's country">
-                <Dropdown className="h-11 w-full" value="Nigeria" options={COUNTRIES} onChange={() => {}} />
+                <Dropdown className="h-11 w-full" value={country} options={COUNTRIES} onChange={setCountry} />
               </Field>
               <Field label="Full name">
-                <input className={inputClass} placeholder="Full name" required />
+                <input name="name" className={inputClass} placeholder="Full name" required />
               </Field>
               <Field label="Phone number">
-                <input className={inputClass} placeholder="Phone number" type="tel" required />
+                <input name="phone" className={inputClass} placeholder="Phone number" type="tel" required />
               </Field>
               <Field label="ID type">
-                <input className={inputClass} placeholder="Enter ID type" required />
+                <input name="idType" className={inputClass} placeholder="Enter ID type" required />
               </Field>
               <Field label="Host name">
-                <input className={inputClass} placeholder="Host name" defaultValue={session.name} required />
+                <input name="hostName" className={inputClass} placeholder="Host name" defaultValue={user?.name ?? ""} readOnly />
               </Field>
               <Field label="Host rank">
-                <Dropdown className="h-11 w-full" value="Major" options={RANKS} onChange={() => {}} />
+                <Dropdown className="h-11 w-full" value={hostRank} options={RANKS} onChange={setHostRank} />
               </Field>
               <Field label="Host department">
-                <input className={inputClass} placeholder="Host Department" required />
+                <input name="hostDepartment" className={inputClass} placeholder="Host Department" />
               </Field>
               <Field label="Type of visitor">
-                <Dropdown className="h-11 w-full" value="family" options={VISITOR_TYPES} onChange={() => {}} />
+                <Dropdown className="h-11 w-full" value={visitorType} options={VISITOR_TYPES} onChange={setVisitorType} />
               </Field>
               <Field label="Escort">
-                <input className={inputClass} type="number" min={0} defaultValue={0} />
+                <input name="escortCount" className={inputClass} type="number" min={0} defaultValue={0} />
               </Field>
               <Field label="Escort Names">
-                <input className={inputClass} placeholder="Enter escort names" />
+                <input name="escortNames" className={inputClass} placeholder="Enter escort names" />
               </Field>
               <Field label="Expected date">
-                <input className={inputClass} type="date" required />
+                <input name="expectedDate" className={inputClass} type="date" required />
               </Field>
               <Field label="Expected time ( FRO/TO)">
-                <input className={inputClass} placeholder="9:00 AM - 8:00 AM" required />
+                <div className="flex gap-3">
+                  <input name="expectedTimeFrom" className={inputClass} placeholder="9:00 AM" required />
+                  <input name="expectedTimeTo" className={inputClass} placeholder="8:00 AM" required />
+                </div>
               </Field>
 
-              <Button type="submit" fullWidth className="mt-3 h-[52px]">
-                Submit
+              {formError && (
+                <p role="alert" className="rounded-[4px] bg-red-light px-4 py-3 text-sm text-red">
+                  {formError}
+                </p>
+              )}
+
+              <Button type="submit" fullWidth className="mt-3 h-[52px]" disabled={busy}>
+                {busy ? "Submitting\u2026" : "Submit"}
               </Button>
             </form>
           </div>
@@ -198,7 +267,7 @@ export default function HostDashboardPage() {
             </div>
 
             {selected ? (
-              <VisitorDetail visitor={selected} onBack={() => setSelected(null)} />
+              <VisitorDetail visitor={selected} onBack={() => setSelected(null)} busy={busy} onAct={act} />
             ) : (
               <>
                 <div className="flex items-center justify-center gap-4 border-b border-border px-8 py-6">
@@ -209,14 +278,21 @@ export default function HostDashboardPage() {
                     <input
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && setSubmittedQuery(query)}
                       placeholder="Search"
                       className="h-12 w-full rounded-[4px] border border-border bg-white pl-11 pr-4 text-sm text-ink outline-none placeholder:text-muted focus:border-primary"
                     />
                   </div>
-                  <Button className="px-8">Search</Button>
+                  <Button className="px-8" onClick={() => setSubmittedQuery(query)}>Search</Button>
                 </div>
 
-                {rows.length === 0 ? (
+                {loading ? (
+                  <p className="py-16 text-center text-sm text-muted">Loading&hellip;</p>
+                ) : error ? (
+                  <button onClick={reload} className="block w-full py-16 text-center text-sm text-red">
+                    {error} &mdash; retry
+                  </button>
+                ) : rows.length === 0 ? (
                   <EmptyState />
                 ) : (
                   <div className="max-h-[620px] overflow-y-auto">
@@ -287,7 +363,17 @@ function DetailRow({ label, value, valueClass }: { label: string; value?: string
   );
 }
 
-function VisitorDetail({ visitor, onBack }: { visitor: Visitor; onBack: () => void }) {
+function VisitorDetail({
+  visitor,
+  onBack,
+  busy,
+  onAct,
+}: {
+  visitor: Visitor;
+  onBack: () => void;
+  busy: boolean;
+  onAct: (kind: "confirm" | "cancel" | "end", visitor: Visitor) => void;
+}) {
   return (
     <div className="px-8 py-6">
       <button onClick={onBack} className="text-ink transition-opacity hover:opacity-60" aria-label="Back">
@@ -333,9 +419,38 @@ function VisitorDetail({ visitor, onBack }: { visitor: Visitor; onBack: () => vo
         <DetailRow label="Sign in time" value={visitor.signInTime} />
         <DetailRow label="Sign in agent" value={visitor.signInAgent} />
 
-        <Button variant="destructive" fullWidth className="mt-6 h-[52px]">
-          End appointment
-        </Button>
+        <div className="mt-6 flex flex-col gap-3">
+          {/* A walk-in raised by Security must be confirmed before it can be signed in. */}
+          {visitor.status === "awaiting_approval" && (
+            <Button fullWidth className="h-[52px]" disabled={busy} onClick={() => onAct("confirm", visitor)}>
+              Confirm visitor
+            </Button>
+          )}
+          {visitor.status === "signed_in" && (
+            <Button
+              variant="destructive"
+              fullWidth
+              className="h-[52px]"
+              disabled={busy}
+              onClick={() => onAct("end", visitor)}
+            >
+              End appointment
+            </Button>
+          )}
+          {(visitor.status === "submitted" ||
+            visitor.status === "confirmed" ||
+            visitor.status === "awaiting_approval") && (
+            <Button
+              variant="secondary"
+              fullWidth
+              className="h-[52px]"
+              disabled={busy}
+              onClick={() => onAct("cancel", visitor)}
+            >
+              Cancel visitation
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

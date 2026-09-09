@@ -1,18 +1,23 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { NAV_ITEMS } from "@/lib/nav-config";
-import { DEFAULT_SESSIONS } from "@/lib/mock-session";
-import { mockNotifications } from "@/data/mock-data";
+import { RequireRole } from "@/lib/auth/RequireRole";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const session = DEFAULT_SESSIONS.institution_admin;
-
   return (
-    <DashboardShell
-      navItems={NAV_ITEMS.institution_admin}
-      userName={session.name}
-      notifications={mockNotifications}
-    >
+    <RequireRole role="institution_admin">
+      <AdminShell>{children}</AdminShell>
+    </RequireRole>
+  );
+}
+
+function AdminShell({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  return (
+    <DashboardShell navItems={NAV_ITEMS.institution_admin} userName={user?.name ?? ""} userPhotoUrl={user?.photoUrl}>
       {children}
     </DashboardShell>
   );
