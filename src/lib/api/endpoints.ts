@@ -279,7 +279,11 @@ export const analyticsApi = {
 /* ---------------------------------------------------------- notifications */
 
 export const notificationsApi = {
-  list: (unread?: boolean) => api.get<AppNotification[]>("/notifications", { query: { unread } }),
+  /** The API's field is `isRead`, not `read` — normalized here so the rest of the app reads `.read`. */
+  list: (unread?: boolean) =>
+    api
+      .get<(AppNotification & { isRead?: boolean })[]>("/notifications", { query: { unread } })
+      .then((rows) => rows.map(({ isRead, ...n }) => ({ ...n, read: isRead ?? n.read }))),
   markRead: (id: string) => api.patch<void>(`/notifications/${id}/read`),
   markAllRead: () => api.patch<void>("/notifications/read-all"),
 };

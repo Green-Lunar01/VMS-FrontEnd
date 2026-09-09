@@ -13,7 +13,7 @@ import { visitorsApi } from "@/lib/api/endpoints";
 import { useApi } from "@/lib/api/useApi";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { ID_TYPE_LABEL, VISITOR_TYPE_LABEL } from "@/lib/labels";
+import { ID_TYPE_LABEL, ID_TYPE_OPTIONS, VISITOR_TYPE_LABEL } from "@/lib/labels";
 import { agentName, cn, formatDate, timeRange } from "@/lib/utils";
 import type { Visitor, VisitorStatus } from "@/lib/types";
 
@@ -75,6 +75,7 @@ export default function HostDashboardPage() {
   const [country, setCountry] = useState("Nigeria");
   const [hostRank, setHostRank] = useState("Major");
   const [visitorType, setVisitorType] = useState("family");
+  const [idType, setIdType] = useState("nin");
 
   const active = TABS.find((t) => t.value === tab)!;
 
@@ -114,7 +115,7 @@ export default function HostDashboardPage() {
         name: String(form.get("name") ?? ""),
         phone: String(form.get("phone") ?? ""),
         country,
-        idType: String(form.get("idType") ?? ""),
+        idType,
         visitorType,
         escortCount: Number(form.get("escortCount") ?? 0),
         escortNames,
@@ -222,7 +223,7 @@ export default function HostDashboardPage() {
                 <input name="phone" className={inputClass} placeholder="Phone number" type="tel" required />
               </Field>
               <Field label="ID type">
-                <input name="idType" className={inputClass} placeholder="Enter ID type" required />
+                <Dropdown className="h-11 w-full" value={idType} options={ID_TYPE_OPTIONS} onChange={setIdType} />
               </Field>
               <Field label="Host name">
                 <input name="hostName" className={inputClass} placeholder="Host name" defaultValue={user?.name ?? ""} readOnly />

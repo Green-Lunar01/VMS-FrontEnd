@@ -23,7 +23,7 @@ export function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 flex h-screen w-[235px] shrink-0 flex-col border-r border-divider bg-white">
+    <aside className="flex h-full w-[235px] shrink-0 flex-col overflow-y-auto border-r border-divider bg-white">
       <div className="flex flex-col items-center gap-1 px-4 pb-6 pt-5" title={institutionName}>
         <InstitutionCrest size={108} />
         <p className="text-center font-display text-[26px] leading-tight text-primary">{shortName}</p>

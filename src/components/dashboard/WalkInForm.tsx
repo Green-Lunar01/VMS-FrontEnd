@@ -10,6 +10,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { officersApi, visitorsApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useApi } from "@/lib/api/useApi";
+import { ID_TYPE_OPTIONS } from "@/lib/labels";
 import type { Officer } from "@/lib/types";
 
 const inputClass =
@@ -18,13 +19,6 @@ const inputClass =
 const COUNTRIES = [
   { label: "Nigeria", value: "Nigeria" },
   { label: "Ghana", value: "Ghana" },
-];
-
-const ID_TYPES = [
-  { label: "NIN", value: "nin" },
-  { label: "International Passport", value: "international_passport" },
-  { label: "Voter's Card", value: "voters_card" },
-  { label: "Driver's License", value: "drivers_license" },
 ];
 
 const VISITOR_TYPES = [
@@ -129,7 +123,7 @@ export function WalkInForm({ onCreated }: { onCreated?: () => void }) {
         <input name="phone" className={inputClass} placeholder="Phone number" type="tel" required />
       </Field>
       <Field label="ID type">
-        <Dropdown className="h-11 w-full" value={idType} options={ID_TYPES} onChange={setIdType} />
+        <Dropdown className="h-11 w-full" value={idType} options={ID_TYPE_OPTIONS} onChange={setIdType} />
       </Field>
       <Field label="Host name">
         <Dropdown

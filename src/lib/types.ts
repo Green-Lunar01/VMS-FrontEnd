@@ -164,11 +164,10 @@ export interface Dispatch {
 export interface AppNotification {
   _id: string;
   type: NotificationType;
-  /** Headline shown in bold in the feed, e.g. "Visitor submitted". */
-  title?: string;
-  /** Green sub-line naming the person involved, e.g. "Musa John". */
-  subject?: string;
-  message?: string;
+  /** Headline shown in bold in the feed, e.g. "Visitor waiting for your confirmation". */
+  title: string;
+  /** Green sub-line with the specifics, e.g. "Musa John is at the gate and needs...". */
+  message: string;
   read: boolean;
   createdAt: string;
 }

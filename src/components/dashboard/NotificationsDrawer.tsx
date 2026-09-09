@@ -22,14 +22,6 @@ function relativeTime(iso: string) {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
-/** The API may send a single `message`; the feed shows a title plus a green subject line. */
-function splitNotification(n: AppNotification) {
-  if (n.title) return { title: n.title, subject: n.subject ?? "" };
-  const message = n.message ?? "";
-  const [first, ...rest] = message.split(" — ");
-  return { title: first, subject: rest.join(" — ") };
-}
-
 export function NotificationsDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { data, loading, error, setData } = useApi<AppNotification[]>(
     () => notificationsApi.list(),
@@ -84,25 +76,22 @@ export function NotificationsDrawer({ open, onClose }: { open: boolean; onClose:
       {error && !loading && <p className="px-6 py-6 text-sm text-red">{error}</p>}
       {!loading && !error && notifications.length === 0 && <EmptyState label="No notifications yet" />}
 
-      {notifications.map((n) => {
-        const { title, subject } = splitNotification(n);
-        return (
-          <button
-            key={n._id}
-            onClick={() => markRead(n)}
-            className={cn(
-              "flex w-full items-start justify-between gap-4 border-b border-divider px-6 py-4 text-left transition-colors hover:bg-grey/50",
-              !n.read && "bg-primary-light/30",
-            )}
-          >
-            <div className="min-w-0">
-              <p className="text-[15px] font-semibold text-ink">{title}</p>
-              {subject && <p className="mt-0.5 text-sm text-primary">{subject}</p>}
-            </div>
-            <span className="shrink-0 pt-0.5 text-xs text-muted">{relativeTime(n.createdAt)}</span>
-          </button>
-        );
-      })}
+      {notifications.map((n) => (
+        <button
+          key={n._id}
+          onClick={() => markRead(n)}
+          className={cn(
+            "flex w-full items-start justify-between gap-4 border-b border-divider px-6 py-4 text-left transition-colors hover:bg-grey/50",
+            !n.read && "bg-primary-light/30",
+          )}
+        >
+          <div className="min-w-0">
+            <p className="text-[15px] font-semibold text-ink">{n.title}</p>
+            {n.message && <p className="mt-0.5 text-sm text-primary">{n.message}</p>}
+          </div>
+          <span className="shrink-0 pt-0.5 text-xs text-muted">{relativeTime(n.createdAt)}</span>
+        </button>
+      ))}
     </Drawer>
   );
 }

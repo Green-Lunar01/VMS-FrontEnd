@@ -29,8 +29,8 @@ export function PlatformShell({ children }: { children: ReactNode }) {
   const { logout } = useAuth();
 
   return (
-    <div className="flex min-h-screen bg-grey">
-      <aside className="sticky top-0 flex h-screen w-[186px] shrink-0 flex-col border-r border-divider bg-white">
+    <div className="flex h-screen overflow-hidden bg-grey">
+      <aside className="flex h-full w-[186px] shrink-0 flex-col overflow-y-auto border-r border-divider bg-white">
         <div className="flex justify-center px-4 pb-8 pt-6">
           <Image src="/branding/green-lunar.png" alt="Green Lunar Nigeria Limited" width={100} height={76} />
         </div>
@@ -63,8 +63,8 @@ export function PlatformShell({ children }: { children: ReactNode }) {
         </nav>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-[102px] w-full shrink-0 items-center justify-end border-b border-divider bg-white px-8">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex h-[102px] w-full shrink-0 items-center justify-end border-b border-divider bg-white px-8">
           <Link href="/super-admin/profile">
             <Image
               src="/branding/avatar-placeholder.png"
@@ -75,7 +75,8 @@ export function PlatformShell({ children }: { children: ReactNode }) {
             />
           </Link>
         </header>
-        <main className="flex-1 px-6 py-5">{children}</main>
+        {/* Only this pane scrolls, so the sidebar and header never move out of view. */}
+        <main className="flex-1 overflow-y-auto px-6 py-5">{children}</main>
       </div>
     </div>
   );

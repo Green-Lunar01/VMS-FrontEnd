@@ -30,8 +30,8 @@ export function HostShell({
   const active = pathname?.startsWith("/host/dashboard");
 
   return (
-    <div className="flex min-h-screen bg-grey">
-      <aside className="sticky top-0 hidden h-screen w-[196px] shrink-0 flex-col border-r border-divider bg-white md:flex">
+    <div className="flex h-screen overflow-hidden bg-grey">
+      <aside className="hidden h-full w-[196px] shrink-0 flex-col overflow-y-auto border-r border-divider bg-white md:flex">
         <div className="flex flex-col items-center gap-1 px-4 pb-5 pt-4">
           <InstitutionCrest size={96} />
           <p className="font-display text-[24px] leading-tight text-primary">DHQ</p>
@@ -64,8 +64,8 @@ export function HostShell({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-[84px] w-full shrink-0 items-center justify-end gap-5 border-b border-divider bg-white px-6 sm:px-10">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex h-[84px] w-full shrink-0 items-center justify-end gap-5 border-b border-divider bg-white px-6 sm:px-10">
           <button
             className="flex h-9 w-9 items-center justify-center rounded-full bg-blue text-white transition-opacity hover:opacity-90"
             aria-label="Call"
@@ -85,7 +85,8 @@ export function HostShell({
           </Link>
         </header>
 
-        <main className="flex-1">{children}</main>
+        {/* Only this pane scrolls, so the sidebar and header never move out of view. */}
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
 
       <NotificationsDrawer open={notifOpen} onClose={() => setNotifOpen(false)} />

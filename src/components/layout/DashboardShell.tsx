@@ -33,14 +33,14 @@ export function DashboardShell({
   const [notifOpen, setNotifOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-grey">
+    <div className="flex h-screen overflow-hidden bg-grey">
       <Sidebar
         items={navItems}
         institutionName={institutionName}
         shortName={shortName}
         onLogout={logout}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar
           userName={userName}
           userPhotoUrl={userPhotoUrl}
@@ -49,7 +49,8 @@ export function DashboardShell({
           onShowSignedOut={onShowSignedOut}
           showVisitorShortcuts={showVisitorShortcuts}
         />
-        <main className="flex-1 px-8 py-6">{children}</main>
+        {/* Only this pane scrolls, so the sidebar and topbar never move out of view. */}
+        <main className="flex-1 overflow-y-auto px-8 py-6">{children}</main>
       </div>
 
       <NotificationsDrawer open={notifOpen} onClose={() => setNotifOpen(false)} />
