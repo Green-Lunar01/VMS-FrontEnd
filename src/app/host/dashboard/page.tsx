@@ -101,7 +101,8 @@ export default function HostDashboardPage() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
+    const formEl = e.currentTarget;
+    const form = new FormData(formEl);
     const escortNames = String(form.get("escortNames") ?? "")
       .split(",")
       .map((n) => n.trim())
@@ -122,7 +123,9 @@ export default function HostDashboardPage() {
         expectedTimeTo: String(form.get("expectedTimeTo") ?? ""),
         phoneOrLaptop: false,
       });
-      e.currentTarget.reset();
+      // e.currentTarget is nulled by the time the await above resolves, so the
+      // element reference has to be captured beforehand.
+      formEl.reset();
       setConfirmOpen(true);
       reload();
     } catch (err) {
@@ -237,7 +240,8 @@ export default function HostDashboardPage() {
                 <input name="escortCount" className={inputClass} type="number" min={0} defaultValue={0} />
               </Field>
               <Field label="Escort Names">
-                <input name="escortNames" className={inputClass} placeholder="Enter escort names" />
+                <input name="escortNames" className={inputClass} placeholder="e.g. John Doe, Jane Doe" />
+                <p className="text-xs text-muted">Separate multiple names with commas.</p>
               </Field>
               <Field label="Expected date">
                 <input name="expectedDate" className={inputClass} type="date" required />

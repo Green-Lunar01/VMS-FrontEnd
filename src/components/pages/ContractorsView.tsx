@@ -58,7 +58,8 @@ function AddContractorTab() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
+    const formEl = e.currentTarget;
+    const form = new FormData(formEl);
     setBusy(true);
     setError(null);
     try {
@@ -71,7 +72,9 @@ function AddContractorTab() {
         validityTo: String(form.get("to") ?? ""),
       });
       setCreated(contractor);
-      e.currentTarget.reset();
+      // e.currentTarget is nulled by the time the await above resolves, so the
+      // element reference has to be captured beforehand.
+      formEl.reset();
     } catch (err) {
       setError(err instanceof ApiError ? err.messages.join(" ") : "Could not add this contractor.");
     } finally {

@@ -69,7 +69,8 @@ export function WalkInForm({ onCreated }: { onCreated?: () => void }) {
       setError("Choose the host this visitor is here to see.");
       return;
     }
-    const form = new FormData(e.currentTarget);
+    const formEl = e.currentTarget;
+    const form = new FormData(formEl);
     const escortNames = String(form.get("escortNames") ?? "")
       .split(",")
       .map((n) => n.trim())
@@ -88,7 +89,9 @@ export function WalkInForm({ onCreated }: { onCreated?: () => void }) {
         escortNames,
         phoneOrLaptop: false,
       });
-      e.currentTarget.reset();
+      // e.currentTarget is nulled by the time the await above resolves, so the
+      // element reference has to be captured beforehand.
+      formEl.reset();
       setDone(true);
       onCreated?.();
       window.setTimeout(() => setDone(false), 4000);
@@ -143,7 +146,8 @@ export function WalkInForm({ onCreated }: { onCreated?: () => void }) {
         <input name="escortCount" className={inputClass} type="number" min={0} defaultValue={0} />
       </Field>
       <Field label="Escort names">
-        <input name="escortNames" className={inputClass} placeholder="Enter escort names" />
+        <input name="escortNames" className={inputClass} placeholder="e.g. John Doe, Jane Doe" />
+        <p className="text-xs text-muted">Separate multiple names with commas.</p>
       </Field>
 
       {error && (

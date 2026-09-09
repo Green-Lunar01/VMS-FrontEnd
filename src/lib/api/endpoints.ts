@@ -108,11 +108,28 @@ export interface CreateOfficerPayload {
   appointment: string;
 }
 
+/**
+ * The API nests the officer's login identity under `user` (an OfficerProfile
+ * references a User, not the other way round) — name/email/photoUrl live on
+ * `user`, not on the profile itself. Flattening them here means every screen
+ * can keep reading `officer.name` directly instead of `officer.user.name`.
+ */
+function normalizeOfficer(raw: Officer): Officer {
+  return {
+    ...raw,
+    name: raw.user?.name ?? raw.name,
+    email: raw.user?.email ?? raw.email,
+    photoUrl: raw.user?.photoUrl ?? raw.photoUrl,
+  };
+}
+
 export const officersApi = {
-  list: (params?: { q?: string; serviceType?: string }) => api.get<Officer[]>("/officers", { query: params }),
+  list: (params?: { q?: string; serviceType?: string }) =>
+    api.get<Officer[]>("/officers", { query: params }).then((rows) => rows.map(normalizeOfficer)),
   /** Single-record view — includes the computed `visitorsReceivedCount`. */
-  get: (id: string) => api.get<Officer>(`/officers/${id}`),
-  create: (payload: CreateOfficerPayload) => api.post<Officer>("/officers", payload),
+  get: (id: string) => api.get<Officer>(`/officers/${id}`).then(normalizeOfficer),
+  create: (payload: CreateOfficerPayload) =>
+    api.post<Officer>("/officers", payload).then(normalizeOfficer),
   resendCredentials: (id: string) => api.post<void>(`/officers/${id}/resend-credentials`),
   remove: (id: string) => api.del<void>(`/officers/${id}`),
 };

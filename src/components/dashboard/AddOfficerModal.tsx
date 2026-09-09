@@ -111,6 +111,11 @@ export function AddOfficerModal({
           <input name="email" className={inputClass} placeholder="Email" type="email" required />
         </Field>
 
+        <p className="text-xs text-muted">
+          There&apos;s no password field — a temporary password is generated automatically and
+          emailed to this address, and they&apos;ll be asked to set their own on first login.
+        </p>
+
         {error && (
           <p role="alert" className="rounded-[4px] bg-red-light px-4 py-3 text-sm text-red">
             {error}
