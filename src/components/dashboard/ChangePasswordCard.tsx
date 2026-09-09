@@ -66,9 +66,30 @@ export function ChangePasswordCard() {
         <p className="mb-6 text-sm text-muted">This will sign you out of any other devices you&apos;re logged in on.</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <Input name="currentPassword" label="Current password" type="password" placeholder="••••••••••" required />
-          <Input name="newPassword" label="New password" type="password" placeholder="••••••••••" required />
-          <Input name="confirmPassword" label="Confirm new password" type="password" placeholder="••••••••••" required />
+          <Input
+            name="currentPassword"
+            label="Current password"
+            type="password"
+            placeholder="••••••••••"
+            autoComplete="off"
+            required
+          />
+          <Input
+            name="newPassword"
+            label="New password"
+            type="password"
+            placeholder="••••••••••"
+            autoComplete="new-password"
+            required
+          />
+          <Input
+            name="confirmPassword"
+            label="Confirm new password"
+            type="password"
+            placeholder="••••••••••"
+            autoComplete="new-password"
+            required
+          />
           {error && (
             <p role="alert" className="rounded-[4px] bg-red-light px-4 py-3 text-sm text-red">
               {error}

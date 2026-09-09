@@ -9,8 +9,8 @@ import { InstitutionDetailDrawer } from "@/components/dashboard/InstitutionDetai
 import { institutionsApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useApi } from "@/lib/api/useApi";
-import { setStoredTokens, setStoredUser } from "@/lib/auth/storage";
-import { ROLE_HOME } from "@/lib/auth/AuthProvider";
+import { setStoredTokens } from "@/lib/auth/storage";
+import { ROLE_HOME, useAuth } from "@/lib/auth/AuthProvider";
 import type { Institution } from "@/lib/types";
 
 const inputClass =
@@ -31,6 +31,7 @@ function BigTab({ label, active, onClick }: { label: string; active: boolean; on
 
 export default function InstitutionsPage() {
   const router = useRouter();
+  const { setUser } = useAuth();
   const [tab, setTab] = useState<"register" | "list">("list");
   const [selected, setSelected] = useState<Institution | null>(null);
 
@@ -46,13 +47,22 @@ export default function InstitutionsPage() {
     setSelected((cur) => (cur && cur._id === updated._id ? updated : cur));
   }
 
-  /** Swaps this session's tokens for one acting as the institution's admin. */
+  /**
+   * Swaps this session for one acting as the institution's admin. The role guard
+   * reads the user from context, so the context has to be updated too — writing
+   * only to storage leaves the session as super_admin and the redirect bounces
+   * straight back here.
+   */
   async function impersonate(inst: Institution) {
-    const res = await institutionsApi.impersonate(inst._id);
-    setStoredTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
-    setStoredUser(res.user);
-    router.replace(ROLE_HOME[res.user.role]);
-    router.refresh();
+    try {
+      const res = await institutionsApi.impersonate(inst._id);
+      setStoredTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+      setUser(res.user);
+      setSelected(null);
+      router.replace(ROLE_HOME[res.user.role]);
+    } catch (err) {
+      window.alert(err instanceof ApiError ? err.messages.join(" ") : "Could not act as this institution.");
+    }
   }
 
   const columns: Column<Institution>[] = [

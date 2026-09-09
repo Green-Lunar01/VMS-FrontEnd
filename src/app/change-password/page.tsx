@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -13,34 +12,59 @@ import { ApiError } from "@/lib/api/client";
 /**
  * Forced first-login password change. Accounts created by someone else carry
  * `mustChangePassword`; the API also revokes the refresh token here, so the user
- * is sent back to log in with the new password.
+ * logs in again with the new password.
+ *
+ * Values are read from the form on submit rather than from React state: password
+ * managers can autofill the DOM without firing React's onChange, which would
+ * otherwise send an empty "current password" and get it rejected.
  */
 export default function ForcedChangePasswordPage() {
-  const router = useRouter();
-  const { logout } = useAuth();
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const { user, logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const currentPassword = String(form.get("currentPassword") ?? "");
+    const newPassword = String(form.get("newPassword") ?? "");
+    const confirmPassword = String(form.get("confirmPassword") ?? "");
+
     setError(null);
+    if (!currentPassword) {
+      setError("Enter the temporary password from your credentials email.");
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setError("The new passwords don't match.");
       return;
     }
+
     setLoading(true);
     try {
       await authApi.changePassword(currentPassword, newPassword);
-      // change-password revokes the refresh token, so re-login is required.
-      await logout();
-      router.replace("/login");
+      setDone(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.messages.join(" ") : "Unable to change your password.");
       setLoading(false);
     }
+  }
+
+  if (done) {
+    return (
+      <AuthLayout>
+        <div className="flex w-full flex-col gap-4">
+          <h2 className="text-lg font-bold text-ink">Password updated</h2>
+          <p className="text-sm text-muted">
+            Changing your password ends every signed-in session. Log in again with your new password.
+          </p>
+          <Button fullWidth onClick={() => void logout()}>
+            Go to login
+          </Button>
+        </div>
+      </AuthLayout>
+    );
   }
 
   return (
@@ -54,31 +78,33 @@ export default function ForcedChangePasswordPage() {
         </div>
 
         <Input
-          label="Current password"
+          name="currentPassword"
+          label="Temporary password"
           type="password"
           placeholder="••••••••••"
-          autoComplete="current-password"
+          autoComplete="off"
+          hint={
+            user?.role === "host"
+              ? "The password from your credentials email."
+              : "The password whoever created your account set for you."
+          }
           required
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
         />
         <Input
+          name="newPassword"
           label="New password"
           type="password"
           placeholder="••••••••••"
           autoComplete="new-password"
           required
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
         />
         <Input
+          name="confirmPassword"
           label="Confirm new password"
           type="password"
           placeholder="••••••••••"
           autoComplete="new-password"
           required
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
         />
 
         {error && (
@@ -90,6 +116,14 @@ export default function ForcedChangePasswordPage() {
         <Button type="submit" fullWidth disabled={loading}>
           {loading ? "Updating…" : "Update password"}
         </Button>
+
+        <button
+          type="button"
+          onClick={() => void logout()}
+          className="text-sm text-muted hover:text-ink hover:underline"
+        >
+          Back to login
+        </button>
       </form>
     </AuthLayout>
   );
