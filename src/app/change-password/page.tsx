@@ -27,9 +27,11 @@ export default function ForcedChangePasswordPage() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const currentPassword = String(form.get("currentPassword") ?? "");
-    const newPassword = String(form.get("newPassword") ?? "");
-    const confirmPassword = String(form.get("confirmPassword") ?? "");
+    // Trimmed because the temporary password is usually copy-pasted from an
+    // email, which often carries a stray leading/trailing space or newline.
+    const currentPassword = String(form.get("currentPassword") ?? "").trim();
+    const newPassword = String(form.get("newPassword") ?? "").trim();
+    const confirmPassword = String(form.get("confirmPassword") ?? "").trim();
 
     setError(null);
     if (!currentPassword) {

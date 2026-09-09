@@ -22,15 +22,18 @@ export function ChangePasswordCard() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const next = String(form.get("newPassword") ?? "");
-    if (next !== String(form.get("confirmPassword") ?? "")) {
+    // Trimmed in case the current password was copy-pasted with a stray
+    // leading/trailing space or newline.
+    const current = String(form.get("currentPassword") ?? "").trim();
+    const next = String(form.get("newPassword") ?? "").trim();
+    if (next !== String(form.get("confirmPassword") ?? "").trim()) {
       setError("The new passwords don't match.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      await authApi.changePassword(String(form.get("currentPassword") ?? ""), next);
+      await authApi.changePassword(current, next);
       setSuccess(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.messages.join(" ") : "Could not change your password.");

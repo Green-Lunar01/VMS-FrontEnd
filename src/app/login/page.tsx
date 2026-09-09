@@ -22,7 +22,10 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const user = await login(email.trim(), password);
+      // Temporary passwords are usually copy-pasted from an email, which often
+      // carries a stray leading/trailing space or newline that bcrypt's exact
+      // comparison would otherwise reject.
+      const user = await login(email.trim(), password.trim());
       // Accounts provisioned by someone else must set their own password first.
       router.replace(user.mustChangePassword ? "/change-password" : ROLE_HOME[user.role]);
     } catch (err) {
