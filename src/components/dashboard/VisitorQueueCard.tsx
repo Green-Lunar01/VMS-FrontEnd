@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 import { ID_TYPE_LABEL, VISITOR_TYPE_LABEL, SERVICE_TYPE_LABEL } from "@/lib/labels";
-import { formatDate } from "@/lib/utils";
+import { agentName, formatDate, timeRange } from "@/lib/utils";
 import type { Visitor, ServiceType } from "@/lib/types";
 
 function Row({ label, value }: { label: string; value?: string | number }) {
@@ -74,13 +74,13 @@ export function VisitorQueueCard({
         )}
         <Row label="Escort" value={visitor.escortCount} />
         <Row label="Escort names" value={visitor.escortNames.join(", ")} />
-        <Row label="Expected date" value={formatDate(visitor.expectedDate)} />
-        <Row label="Expected time (FRO/TO)" value={`${visitor.expectedTimeFrom} - ${visitor.expectedTimeTo}`} />
+        <Row label="Expected date" value={visitor.expectedDate ? formatDate(visitor.expectedDate) : undefined} />
+        <Row label="Expected time (FRO/TO)" value={timeRange(visitor.expectedTimeFrom, visitor.expectedTimeTo)} />
         <Row label="Sign in time" value={visitor.signInTime} />
-        <Row label="Sign in agent" value={visitor.signInAgent} />
+        <Row label="Sign in agent" value={agentName(visitor.signInAgent)} />
         <Row label="Appointment end time" value={visitor.appointmentEndTime} />
         <Row label="Sign out time" value={visitor.signOutTime} />
-        <Row label="Sign out agent" value={visitor.signOutAgent} />
+        <Row label="Sign out agent" value={agentName(visitor.signOutAgent)} />
       </div>
 
       {action && (

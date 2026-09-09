@@ -14,7 +14,7 @@ import { useApi } from "@/lib/api/useApi";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { ID_TYPE_LABEL, VISITOR_TYPE_LABEL } from "@/lib/labels";
-import { cn, formatDate } from "@/lib/utils";
+import { agentName, cn, formatDate, timeRange } from "@/lib/utils";
 import type { Visitor, VisitorStatus } from "@/lib/types";
 
 const TABS: { value: VisitorStatus | "all"; label: string; heading: string }[] = [
@@ -418,10 +418,10 @@ function VisitorDetail({
           value={STATUS_LABEL[visitor.status]}
           valueClass={visitor.status === "signed_in" ? "text-primary" : visitor.status === "cancelled" ? "text-red" : ""}
         />
-        <DetailRow label="Expected date" value={formatDate(visitor.expectedDate)} />
-        <DetailRow label="Expected time (FRO/TO)" value={`${visitor.expectedTimeFrom} - ${visitor.expectedTimeTo}`} />
+        <DetailRow label="Expected date" value={visitor.expectedDate ? formatDate(visitor.expectedDate) : undefined} />
+        <DetailRow label="Expected time (FRO/TO)" value={timeRange(visitor.expectedTimeFrom, visitor.expectedTimeTo)} />
         <DetailRow label="Sign in time" value={visitor.signInTime} />
-        <DetailRow label="Sign in agent" value={visitor.signInAgent} />
+        <DetailRow label="Sign in agent" value={agentName(visitor.signInAgent)} />
 
         <div className="mt-6 flex flex-col gap-3">
           {/* A walk-in raised by Security must be confirmed before it can be signed in. */}

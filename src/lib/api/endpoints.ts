@@ -210,8 +210,9 @@ export const contractorsApi = {
   update: (id: string, payload: Partial<CreateContractorPayload>) =>
     api.patch<Contractor>(`/contractors/${id}`, payload),
   revoke: (id: string, reason: string) => api.patch<Contractor>(`/contractors/${id}/revoke`, { reason }),
-  checkIn: (id: string) => api.patch<Contractor>(`/contractors/${id}/check-in`),
-  checkOut: (id: string) => api.patch<Contractor>(`/contractors/${id}/check-out`),
+  /** Both return the ContractorVisit record they created/closed, not the contractor itself. */
+  checkIn: (id: string) => api.patch<ContractorVisit>(`/contractors/${id}/check-in`),
+  checkOut: (id: string) => api.patch<ContractorVisit>(`/contractors/${id}/check-out`),
 };
 
 /* -------------------------------------------------------------- dispatch */

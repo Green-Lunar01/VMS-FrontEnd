@@ -77,6 +77,13 @@ export interface Officer {
   visitorsReceivedCount?: number;
 }
 
+/** A signed-in/signed-out-by reference — the API populates these with just name + email. */
+export interface AgentRef {
+  _id: string;
+  name: string;
+  email: string;
+}
+
 export interface Visitor {
   _id: string;
   name: string;
@@ -86,9 +93,10 @@ export interface Visitor {
   visitorType: VisitorType;
   escortCount: number;
   escortNames: string[];
-  expectedDate: string;
-  expectedTimeFrom: string;
-  expectedTimeTo: string;
+  /** Walk-ins have none of these three — they arrived without a prior appointment. */
+  expectedDate?: string;
+  expectedTimeFrom?: string;
+  expectedTimeTo?: string;
   phoneOrLaptop: boolean;
   status: VisitorStatus;
   guestTagNumber?: string;
@@ -103,8 +111,12 @@ export interface Visitor {
   signInTime?: string;
   signOutTime?: string;
   appointmentEndTime?: string;
-  signInAgent?: string;
-  signOutAgent?: string;
+  /**
+   * Populated on `/visitors` and `/visitors/mine`, but not on `/visitors/today` —
+   * check for an object before reading `.name`.
+   */
+  signInAgent?: AgentRef | string | null;
+  signOutAgent?: AgentRef | string | null;
   hostServiceType?: string;
   host: Pick<Officer, "_id" | "name" | "rank" | "phone" | "department"> & { user?: string };
   createdAt: string;
@@ -130,11 +142,11 @@ export interface Contractor {
 
 export interface ContractorVisit {
   _id: string;
-  contractorId: string;
-  checkedInAt: string;
-  checkedInBy: string;
-  checkedOutAt?: string;
-  checkedOutBy?: string;
+  contractor: string;
+  signInTime: string | null;
+  signInAgent?: AgentRef | null;
+  signOutTime: string | null;
+  signOutAgent?: AgentRef | null;
 }
 
 export interface Dispatch {

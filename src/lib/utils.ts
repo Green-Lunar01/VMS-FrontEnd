@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { AgentRef } from "@/lib/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -33,4 +34,15 @@ export function formatDateTime(value: string | Date) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+/** Some endpoints populate sign-in/out agents with {name, email}, others leave the bare id. */
+export function agentName(agent: AgentRef | string | null | undefined): string | undefined {
+  if (agent && typeof agent === "object") return agent.name;
+  return undefined;
+}
+
+/** Walk-ins carry neither field, so `${from} - ${to}` would otherwise render as "null - null". */
+export function timeRange(from?: string | null, to?: string | null): string | undefined {
+  return from && to ? `${from} - ${to}` : undefined;
 }

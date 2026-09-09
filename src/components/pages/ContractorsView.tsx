@@ -252,8 +252,13 @@ function CheckInTab({ canCheckIn }: { canCheckIn: boolean }) {
     setBusy(true);
     setError(null);
     try {
-      const updated = kind === "in" ? await contractorsApi.checkIn(found._id) : await contractorsApi.checkOut(found._id);
-      setFound(updated);
+      // check-in/check-out return the visit record they created, not the
+      // contractor — the contractor itself is unchanged, so `found` stays put.
+      if (kind === "in") {
+        await contractorsApi.checkIn(found._id);
+      } else {
+        await contractorsApi.checkOut(found._id);
+      }
       setVisits(await contractorsApi.visits(found._id).catch(() => visits));
     } catch (err) {
       setError(err instanceof ApiError ? err.messages.join(" ") : "That action failed.");
@@ -333,9 +338,12 @@ function CheckInTab({ canCheckIn }: { canCheckIn: boolean }) {
             <div className="px-8 py-6">
               {visits.map((v) => (
                 <div key={v._id} className="border-b border-divider py-3 text-sm">
-                  <p className="font-semibold text-ink">In: {formatDateTime(v.checkedInAt)}</p>
+                  <p className="font-semibold text-ink">
+                    In: {v.signInTime ? formatDateTime(v.signInTime) : "—"}
+                  </p>
                   <p className="text-muted">
-                    Out: {v.checkedOutAt ? formatDateTime(v.checkedOutAt) : "—"} · Agent {v.checkedInBy}
+                    Out: {v.signOutTime ? formatDateTime(v.signOutTime) : "—"} · Agent{" "}
+                    {v.signInAgent?.name ?? "—"}
                   </p>
                 </div>
               ))}
