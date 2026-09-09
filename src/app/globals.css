@@ -1,26 +1,76 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core palette — sampled directly from the Figma "Frame 2" swatches */
+  --color-white: #ffffff;
+  --color-grey: #f4f4f4;
+  --color-ink: #1c1c1c;
+  --color-primary: #008751;
+  --color-red: #e31e24;
+  --color-blue: #0072bc;
+  --color-gold: #d4af37;
+
+  /* Derived / supporting tones (not raw swatches, but needed for states) */
+  --color-border: #d9d9d9;
+  --color-muted: #6b7280;
+  --color-primary-dark: #00693f;
+  --color-primary-light: #e6f3ed;
+  --color-red-light: #fdecec;
+  --color-blue-light: #e6f2fa;
+  --color-gold-light: #faf3e0;
+
+  /* Section-header accents seen on the Home dashboard queues (dispatcher / submitted / cancelled) */
+  --color-indigo: #7b7ff0;
+  --color-indigo-light: #e3e4fc;
+  --color-teal: #4fc7d9;
+  --color-teal-light: #d9f3f7;
+
+  /* Sampled 1:1 from the Figma renders */
+  --color-gold-header: #d4af37;
+  --color-row-selected: #f5eccf;
+  --color-nav-active: #fafcfa;
+  --color-divider: #f4f4f4;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-display);
+
+  --color-white: var(--color-white);
+  --color-grey: var(--color-grey);
+  --color-ink: var(--color-ink);
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-light: var(--color-primary-light);
+  --color-red: var(--color-red);
+  --color-red-light: var(--color-red-light);
+  --color-blue: var(--color-blue);
+  --color-blue-light: var(--color-blue-light);
+  --color-gold: var(--color-gold);
+  --color-gold-light: var(--color-gold-light);
+  --color-border: var(--color-border);
+  --color-muted: var(--color-muted);
+  --color-indigo: var(--color-indigo);
+  --color-indigo-light: var(--color-indigo-light);
+  --color-teal: var(--color-teal);
+  --color-teal-light: var(--color-teal-light);
+  --color-gold-header: var(--color-gold-header);
+  --color-row-selected: var(--color-row-selected);
+  --color-nav-active: var(--color-nav-active);
+  --color-divider: var(--color-divider);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  overflow-x: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-grey);
+  color: var(--color-ink);
+}
+
+::selection {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
 }
