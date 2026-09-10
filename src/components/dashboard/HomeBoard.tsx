@@ -43,7 +43,6 @@ function QueueColumn({
   visitors,
   variant,
   withDate,
-  notifyHost,
   loading,
   onAction,
 }: {
@@ -53,7 +52,6 @@ function QueueColumn({
   visitors: Visitor[];
   variant: "submitted" | "cancelled" | "signed_in" | "signed_out";
   withDate?: boolean;
-  notifyHost?: boolean;
   loading?: boolean;
   onAction?: (visitor: Visitor) => void;
 }) {
@@ -74,7 +72,6 @@ function QueueColumn({
                   key={v._id}
                   visitor={v}
                   variant={variant}
-                  notifyHost={notifyHost}
                   onAction={onAction ? () => onAction(v) : undefined}
                 />
               ))
@@ -198,7 +195,6 @@ export function HomeBoard({
                 count={submitted.length}
                 visitors={submitted}
                 variant="submitted"
-                notifyHost
                 loading={loading}
                 onAction={canApprove ? (v) => setApproving(v) : undefined}
               />

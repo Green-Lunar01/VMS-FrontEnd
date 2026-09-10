@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
-import { ID_TYPE_LABEL, VISITOR_TYPE_LABEL, SERVICE_TYPE_LABEL } from "@/lib/labels";
+import { ID_TYPE_LABEL, VISITOR_STATUS_LABEL, VISITOR_TYPE_LABEL, SERVICE_TYPE_LABEL } from "@/lib/labels";
 import { agentName, formatDate, timeRange } from "@/lib/utils";
 import type { Visitor, ServiceType } from "@/lib/types";
 
@@ -44,12 +44,10 @@ export function VisitorQueueCard({
   visitor,
   variant = "submitted",
   onAction,
-  notifyHost,
 }: {
   visitor: Visitor;
   variant?: Variant;
   onAction?: () => void;
-  notifyHost?: boolean;
 }) {
   const action = actionFor(visitor);
 
@@ -60,7 +58,8 @@ export function VisitorQueueCard({
           Cancelled
         </span>
       )}
-      {notifyHost && (
+      {/* Only genuinely unconfirmed walk-ins need the host notified/reminded. */}
+      {visitor.status === "awaiting_approval" && (
         <span className="absolute right-4 top-4 rounded-[4px] bg-gold-header px-2 py-1 text-[10px] font-semibold text-white">
           Notify host
         </span>
@@ -79,6 +78,7 @@ export function VisitorQueueCard({
       </div>
 
       <div>
+        <Row label="Status" value={VISITOR_STATUS_LABEL[visitor.status]} />
         <Row label="Host name" value={visitor.host.name} />
         <Row label="Phone number" value={visitor.phone} />
         <Row label="Host rank" value={visitor.host.rank} />

@@ -13,7 +13,7 @@ import { visitorsApi } from "@/lib/api/endpoints";
 import { useApi } from "@/lib/api/useApi";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { ID_TYPE_LABEL, ID_TYPE_OPTIONS, VISITOR_TYPE_LABEL } from "@/lib/labels";
+import { ID_TYPE_LABEL, ID_TYPE_OPTIONS, VISITOR_STATUS_LABEL, VISITOR_TYPE_LABEL } from "@/lib/labels";
 import { agentName, cn, formatDate, timeRange } from "@/lib/utils";
 import type { Visitor, VisitorStatus } from "@/lib/types";
 
@@ -51,15 +51,6 @@ const STATUS_DOT: Record<VisitorStatus, string> = {
   awaiting_approval: "bg-gold-header",
   submitted: "bg-gold-header",
   confirmed: "bg-gold-header",
-};
-
-const STATUS_LABEL: Record<VisitorStatus, string> = {
-  signed_in: "Signed in",
-  signed_out: "Signed out",
-  cancelled: "Cancelled",
-  awaiting_approval: "Awaiting approval",
-  submitted: "Submitted",
-  confirmed: "Confirmed",
 };
 
 export default function HostDashboardPage() {
@@ -425,7 +416,7 @@ function VisitorDetail({
         <DetailRow label="Escort names" value={visitor.escortNames.join(", ")} />
         <DetailRow
           label="Status"
-          value={STATUS_LABEL[visitor.status]}
+          value={VISITOR_STATUS_LABEL[visitor.status]}
           valueClass={visitor.status === "signed_in" ? "text-primary" : visitor.status === "cancelled" ? "text-red" : ""}
         />
         <DetailRow label="Expected date" value={visitor.expectedDate ? formatDate(visitor.expectedDate) : undefined} />

@@ -1,4 +1,4 @@
-import type { IdType, VisitorType, ServiceType, ModeOfEntry } from "@/lib/types";
+import type { IdType, VisitorType, VisitorStatus, ServiceType, ModeOfEntry } from "@/lib/types";
 
 export const ID_TYPE_LABEL: Record<IdType, string> = {
   nin: "NIN",
@@ -31,4 +31,13 @@ export const SERVICE_TYPE_LABEL: Record<ServiceType, string> = {
 export const MODE_OF_ENTRY_LABEL: Record<ModeOfEntry, string> = {
   direct: "Direct",
   indirect: "Indirect",
+};
+
+export const VISITOR_STATUS_LABEL: Record<VisitorStatus, string> = {
+  awaiting_approval: "Awaiting host confirmation",
+  submitted: "Submitted",
+  confirmed: "Confirmed",
+  signed_in: "Signed in",
+  signed_out: "Signed out",
+  cancelled: "Cancelled",
 };
