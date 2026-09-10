@@ -3,7 +3,13 @@
 
 export type Role = "super_admin" | "institution_admin" | "security_officer" | "host";
 
-export type VisitorType = "friend" | "family" | "official" | "relative";
+/**
+ * "other" requires a corresponding backend change (VisitorType enum +
+ * visitorTypeOther field) — see the frontend's visitor-type form fix for the
+ * exact instructions. Until that ships, submitting "other" is rejected by
+ * the API's @IsEnum validation.
+ */
+export type VisitorType = "friend" | "family" | "official" | "relative" | "other";
 
 export type IdType = "nin" | "international_passport" | "voters_card" | "drivers_license";
 
@@ -91,6 +97,8 @@ export interface Visitor {
   country: string;
   idType: IdType;
   visitorType: VisitorType;
+  /** Only set when visitorType is "other" — the custom type text the user typed. */
+  visitorTypeOther?: string;
   escortCount: number;
   escortNames: string[];
   /** Walk-ins have none of these three — they arrived without a prior appointment. */

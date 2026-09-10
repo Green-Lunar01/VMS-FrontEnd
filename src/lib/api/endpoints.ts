@@ -152,6 +152,8 @@ export interface SubmitVisitorPayload {
   country: string;
   idType: string;
   visitorType: string;
+  /** Only meaningful when visitorType is "other" — see Visitor.visitorTypeOther. */
+  visitorTypeOther?: string;
   escortCount: number;
   escortNames: string[];
   expectedDate: string;

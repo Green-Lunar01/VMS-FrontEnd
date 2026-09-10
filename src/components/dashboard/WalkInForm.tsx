@@ -10,19 +10,12 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { officersApi, visitorsApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useApi } from "@/lib/api/useApi";
-import { ID_TYPE_OPTIONS } from "@/lib/labels";
+import { ID_TYPE_OPTIONS, VISITOR_TYPE_FORM_OPTIONS } from "@/lib/labels";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
 import type { Officer } from "@/lib/types";
 
 const inputClass =
   "h-11 w-full rounded-[4px] border border-border bg-white px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-border focus:border-primary";
-
-const VISITOR_TYPES = [
-  { label: "Family", value: "family" },
-  { label: "Friend", value: "friend" },
-  { label: "Official", value: "official" },
-  { label: "Relative", value: "relative" },
-];
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -75,6 +68,7 @@ export function WalkInForm({ onCreated }: { onCreated?: () => void }) {
         country,
         idType,
         visitorType,
+        visitorTypeOther: visitorType === "other" ? String(form.get("visitorTypeOther") ?? "") : undefined,
         escortCount: Number(form.get("escortCount") ?? 0),
         escortNames,
         phoneOrLaptop: false,
@@ -130,8 +124,18 @@ export function WalkInForm({ onCreated }: { onCreated?: () => void }) {
         />
       </Field>
       <Field label="Type of visitor">
-        <Dropdown className="h-11 w-full" value={visitorType} options={VISITOR_TYPES} onChange={setVisitorType} />
+        <Dropdown className="h-11 w-full" value={visitorType} options={VISITOR_TYPE_FORM_OPTIONS} onChange={setVisitorType} />
       </Field>
+      {visitorType === "other" && (
+        <Field label="Please specify">
+          <input
+            name="visitorTypeOther"
+            className={inputClass}
+            placeholder="e.g. Vendor, Contractor's guest"
+            required
+          />
+        </Field>
+      )}
       <Field label="Escort">
         <input name="escortCount" className={inputClass} type="number" min={0} defaultValue={0} />
       </Field>

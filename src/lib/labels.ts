@@ -20,7 +20,21 @@ export const VISITOR_TYPE_LABEL: Record<VisitorType, string> = {
   family: "Family",
   official: "Official",
   relative: "Relative",
+  other: "Other",
 };
+
+/**
+ * "Other" needs a matching backend change before it can actually be
+ * submitted (see Visitor.visitorType's doc comment in lib/types.ts) — kept
+ * here anyway so the form is ready to go the moment that ships.
+ */
+export const VISITOR_TYPE_FORM_OPTIONS: { label: string; value: VisitorType }[] = [
+  { label: "Family", value: "family" },
+  { label: "Friend", value: "friend" },
+  { label: "Official", value: "official" },
+  { label: "Relative", value: "relative" },
+  { label: "Other", value: "other" },
+];
 
 export const SERVICE_TYPE_LABEL: Record<ServiceType, string> = {
   army: "Army",

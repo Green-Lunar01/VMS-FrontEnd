@@ -9,12 +9,13 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { VisitorDetailDrawer } from "@/components/dashboard/VisitorDetailDrawer";
 import { ApproveVisitorModal } from "@/components/dashboard/ApproveVisitorModal";
-import { VISITOR_STATUS_LABEL, VISITOR_TYPE_LABEL } from "@/lib/labels";
+import { VISITOR_STATUS_LABEL } from "@/lib/labels";
 import { DATE_OPTIONS, VISITOR_TYPE_OPTIONS, SIGN_STATE_OPTIONS } from "@/lib/filter-options";
 import { resolveDateRange } from "@/lib/date-range";
 import { visitorsApi } from "@/lib/api/endpoints";
 import { useApi } from "@/lib/api/useApi";
 import { exportRowsToCsv } from "@/lib/csv";
+import { visitorTypeLabel } from "@/lib/utils";
 import type { ModeOfEntry, Visitor, VisitorStatus, VisitorType } from "@/lib/types";
 
 export function VisitorsLogView({
@@ -89,7 +90,7 @@ function VisitorsLogContent({ canBlacklist, canApprove }: { canBlacklist: boolea
 
   const columns: Column<Visitor>[] = [
     { key: "name", header: "Name", width: "1.35fr", render: (v) => v.name },
-    { key: "visitorType", header: "Visitor type", render: (v) => VISITOR_TYPE_LABEL[v.visitorType] ?? v.visitorType },
+    { key: "visitorType", header: "Visitor type", render: (v) => visitorTypeLabel(v) },
     { key: "status", header: "Status", render: (v) => VISITOR_STATUS_LABEL[v.status] ?? v.status },
     { key: "hostName", header: "Host name", render: (v) => v.host?.name ?? "—" },
     { key: "hostRank", header: "Host rank", render: (v) => v.host?.rank ?? "—" },
@@ -168,7 +169,7 @@ function VisitorsLogContent({ canBlacklist, canApprove }: { canBlacklist: boolea
             onClick={() =>
               exportRowsToCsv<Visitor>("visitors-log", rows, [
                 ["Name", (v) => v.name],
-                ["Visitor type", (v) => VISITOR_TYPE_LABEL[v.visitorType] ?? v.visitorType],
+                ["Visitor type", (v) => visitorTypeLabel(v)],
                 ["Host name", (v) => v.host?.name ?? ""],
                 ["Host rank", (v) => v.host?.rank ?? ""],
                 ["Sign in time", (v) => v.signInTime ?? ""],

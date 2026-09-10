@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
-import { ID_TYPE_LABEL, VISITOR_STATUS_LABEL, VISITOR_TYPE_LABEL, SERVICE_TYPE_LABEL } from "@/lib/labels";
-import { agentName, formatDate, timeRange } from "@/lib/utils";
+import { ID_TYPE_LABEL, VISITOR_STATUS_LABEL, SERVICE_TYPE_LABEL } from "@/lib/labels";
+import { agentName, formatDate, timeRange, visitorTypeLabel } from "@/lib/utils";
 import type { Visitor, ServiceType } from "@/lib/types";
 
 function Row({ label, value }: { label: string; value?: string | number }) {
@@ -74,7 +74,7 @@ export function VisitorQueueCard({
           className="h-[62px] w-[62px] rounded-full object-cover"
         />
         <p className="font-bold text-ink">{visitor.name}</p>
-        <p className="text-xs text-muted">{VISITOR_TYPE_LABEL[visitor.visitorType]}</p>
+        <p className="text-xs text-muted">{visitorTypeLabel(visitor)}</p>
       </div>
 
       <div>

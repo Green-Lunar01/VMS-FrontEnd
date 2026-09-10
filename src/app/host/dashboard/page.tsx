@@ -13,9 +13,9 @@ import { visitorsApi } from "@/lib/api/endpoints";
 import { useApi } from "@/lib/api/useApi";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthProvider";
-import { ID_TYPE_LABEL, ID_TYPE_OPTIONS, VISITOR_STATUS_LABEL, VISITOR_TYPE_LABEL } from "@/lib/labels";
+import { ID_TYPE_LABEL, ID_TYPE_OPTIONS, VISITOR_STATUS_LABEL, VISITOR_TYPE_FORM_OPTIONS } from "@/lib/labels";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
-import { agentName, cn, formatDate, timeRange } from "@/lib/utils";
+import { agentName, cn, formatDate, timeRange, visitorTypeLabel } from "@/lib/utils";
 import type { Visitor, VisitorStatus } from "@/lib/types";
 
 const TABS: { value: VisitorStatus | "all"; label: string; heading: string }[] = [
@@ -34,13 +34,6 @@ const RANKS = [
   { label: "Colonel", value: "Colonel" },
   { label: "Lieutenant", value: "Lieutenant" },
 ];
-const VISITOR_TYPES = [
-  { label: "Family", value: "family" },
-  { label: "Friend", value: "friend" },
-  { label: "Official", value: "official" },
-  { label: "Relative", value: "relative" },
-];
-
 const STATUS_DOT: Record<VisitorStatus, string> = {
   signed_in: "bg-primary",
   signed_out: "bg-red",
@@ -105,6 +98,7 @@ export default function HostDashboardPage() {
         country,
         idType,
         visitorType,
+        visitorTypeOther: visitorType === "other" ? String(form.get("visitorTypeOther") ?? "") : undefined,
         escortCount: Number(form.get("escortCount") ?? 0),
         escortNames,
         expectedDate: String(form.get("expectedDate") ?? ""),
@@ -223,8 +217,23 @@ export default function HostDashboardPage() {
                 <input name="hostDepartment" className={inputClass} placeholder="Host Department" />
               </Field>
               <Field label="Type of visitor">
-                <Dropdown className="h-11 w-full" value={visitorType} options={VISITOR_TYPES} onChange={setVisitorType} />
+                <Dropdown
+                  className="h-11 w-full"
+                  value={visitorType}
+                  options={VISITOR_TYPE_FORM_OPTIONS}
+                  onChange={setVisitorType}
+                />
               </Field>
+              {visitorType === "other" && (
+                <Field label="Please specify">
+                  <input
+                    name="visitorTypeOther"
+                    className={inputClass}
+                    placeholder="e.g. Vendor, Contractor's guest"
+                    required
+                  />
+                </Field>
+              )}
               <Field label="Escort">
                 <input name="escortCount" className={inputClass} type="number" min={0} defaultValue={0} />
               </Field>
@@ -346,7 +355,7 @@ function VisitorRow({ visitor, onView }: { visitor: Visitor; onView: () => void 
       </div>
       <div className="min-w-0 flex-1">
         <p className="font-semibold text-ink">{visitor.name}</p>
-        <p className="text-sm text-muted">{VISITOR_TYPE_LABEL[visitor.visitorType]}</p>
+        <p className="text-sm text-muted">{visitorTypeLabel(visitor)}</p>
       </div>
       <button onClick={onView} className="shrink-0 text-sm text-primary hover:underline">
         view
@@ -399,7 +408,7 @@ function VisitorDetail({
           />
         </div>
         <p className="mt-2 text-lg font-bold text-ink">{visitor.name}</p>
-        <p className="text-sm text-muted">{VISITOR_TYPE_LABEL[visitor.visitorType]}</p>
+        <p className="text-sm text-muted">{visitorTypeLabel(visitor)}</p>
       </div>
 
       <div className="mx-auto max-w-[440px]">

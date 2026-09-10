@@ -6,8 +6,8 @@ import Image from "next/image";
 import { Drawer } from "@/components/ui/Drawer";
 import { Icon } from "@/components/icons/Icon";
 import { ArrowLeft01Icon, MoreHorizontalIcon } from "@hugeicons/core-free-icons";
-import { ID_TYPE_LABEL, VISITOR_TYPE_LABEL } from "@/lib/labels";
-import { agentName, formatDate, timeRange } from "@/lib/utils";
+import { ID_TYPE_LABEL } from "@/lib/labels";
+import { agentName, formatDate, timeRange, visitorTypeLabel } from "@/lib/utils";
 import type { Visitor } from "@/lib/types";
 
 function Row({ label, value }: { label: string; value?: string | number }) {
@@ -97,7 +97,7 @@ export function VisitorDetailDrawer({
               />
             </div>
             <p className="text-lg font-bold text-ink">{visitor.name}</p>
-            <p className="text-sm text-muted">{VISITOR_TYPE_LABEL[visitor.visitorType]}</p>
+            <p className="text-sm text-muted">{visitorTypeLabel(visitor)}</p>
           </div>
 
           <div>

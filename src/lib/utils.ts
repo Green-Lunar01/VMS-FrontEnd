@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { AgentRef } from "@/lib/types";
+import { VISITOR_TYPE_LABEL } from "@/lib/labels";
+import type { AgentRef, Visitor } from "@/lib/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -45,4 +46,10 @@ export function agentName(agent: AgentRef | string | null | undefined): string |
 /** Walk-ins carry neither field, so `${from} - ${to}` would otherwise render as "null - null". */
 export function timeRange(from?: string | null, to?: string | null): string | undefined {
   return from && to ? `${from} - ${to}` : undefined;
+}
+
+/** Shows the visitor's own typed-in type instead of the generic word "Other". */
+export function visitorTypeLabel(visitor: Pick<Visitor, "visitorType" | "visitorTypeOther">): string {
+  if (visitor.visitorType === "other" && visitor.visitorTypeOther) return visitor.visitorTypeOther;
+  return VISITOR_TYPE_LABEL[visitor.visitorType] ?? visitor.visitorType;
 }
