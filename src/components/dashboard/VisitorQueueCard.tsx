@@ -16,6 +16,29 @@ function Row({ label, value }: { label: string; value?: string | number }) {
 
 type Variant = "submitted" | "cancelled" | "signed_in" | "signed_out";
 
+/**
+ * The "Submitted Visitors" column lumps together submitted/confirmed AND
+ * awaiting_approval walk-ins, but only the first two can actually be signed
+ * in — the API rejects approve() until the host confirms. Driven off the
+ * visitor's own status rather than the column's variant so that distinction
+ * shows up on the card instead of offering a "Sign In" that will just fail.
+ */
+function actionFor(visitor: Visitor): { label: string; buttonVariant: "primary" | "destructive" | "muted"; disabled: boolean } | null {
+  switch (visitor.status) {
+    case "signed_in":
+      return { label: "Sign Out", buttonVariant: "destructive", disabled: false };
+    case "awaiting_approval":
+      return { label: "Awaiting confirmation", buttonVariant: "muted", disabled: true };
+    case "submitted":
+    case "confirmed":
+      return { label: "Sign In", buttonVariant: "primary", disabled: false };
+    case "cancelled":
+      return { label: "Sign In", buttonVariant: "muted", disabled: true };
+    default:
+      return null;
+  }
+}
+
 /** Visitor card used in the Home dashboard queue columns. */
 export function VisitorQueueCard({
   visitor,
@@ -28,14 +51,7 @@ export function VisitorQueueCard({
   onAction?: () => void;
   notifyHost?: boolean;
 }) {
-  const action =
-    variant === "signed_in"
-      ? { label: "Sign Out", buttonVariant: "destructive" as const, disabled: false }
-      : variant === "cancelled"
-        ? { label: "Sign In", buttonVariant: "muted" as const, disabled: true }
-        : variant === "signed_out"
-          ? null
-          : { label: "Sign In", buttonVariant: "primary" as const, disabled: false };
+  const action = actionFor(visitor);
 
   return (
     <div className="relative rounded-[10px] border border-border bg-white px-5 py-5">

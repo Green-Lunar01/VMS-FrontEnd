@@ -95,11 +95,12 @@ export function AddOfficerModal({
         <Field label="Appointment">
           <input name="appointment" className={inputClass} placeholder="Appointment" required />
         </Field>
-        <Field label="Branch">
-          <input name="branch" className={inputClass} placeholder="Branch" required />
-        </Field>
         <Field label="Department">
-          <input name="department" className={inputClass} placeholder="Branch" required />
+          <input name="department" className={inputClass} placeholder="Department" required />
+        </Field>
+        {/* Visible label only — the field still posts as "branch" to match the API's DTO. */}
+        <Field label="Directorate">
+          <input name="branch" className={inputClass} placeholder="Directorate" required />
         </Field>
         <Field label="Phone Number">
           <input name="phone" className={inputClass} placeholder="Phone number" type="tel" required />

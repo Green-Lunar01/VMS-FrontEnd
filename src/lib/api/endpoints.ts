@@ -170,25 +170,53 @@ export type WalkInVisitorPayload = Omit<
   expectedTimeTo?: string;
 };
 
+/**
+ * Visitor.host only ever carries name/email from the API — rank and department
+ * live on the host's separate Officer profile, not on the User record the
+ * visitor endpoints populate. Enriched here from a byId lookup so every screen
+ * showing "Host rank"/"Host department" gets real values instead of blanks.
+ */
+async function hostOfficerMap(): Promise<Map<string, Officer>> {
+  const officers = await officersApi.list().catch(() => []);
+  return new Map(officers.map((o) => [o.user?._id ?? o._id, o]));
+}
+
+function applyHostDetails(visitor: Visitor, byUserId: Map<string, Officer>): Visitor {
+  const officer = visitor.host?._id ? byUserId.get(visitor.host._id) : undefined;
+  if (!officer || !visitor.host) return visitor;
+  return { ...visitor, host: { ...visitor.host, rank: officer.rank, department: officer.department } };
+}
+
+async function enrichVisitor(visitor: Visitor): Promise<Visitor> {
+  return applyHostDetails(visitor, await hostOfficerMap());
+}
+
+async function enrichVisitors(visitors: Visitor[]): Promise<Visitor[]> {
+  const byUserId = await hostOfficerMap();
+  return visitors.map((v) => applyHostDetails(v, byUserId));
+}
+
 export const visitorsApi = {
   /** Host pre-submission. */
-  submit: (payload: SubmitVisitorPayload) => api.post<Visitor>("/visitors", payload),
+  submit: (payload: SubmitVisitorPayload) => api.post<Visitor>("/visitors", payload).then(enrichVisitor),
   /** Security Officer onboarding someone who arrived without a prior submission. */
-  walkIn: (payload: WalkInVisitorPayload) => api.post<Visitor>("/visitors/walk-in", payload),
+  walkIn: (payload: WalkInVisitorPayload) => api.post<Visitor>("/visitors/walk-in", payload).then(enrichVisitor),
   /** Host confirming a walk-in raised on their behalf (awaiting_approval -> confirmed). */
-  confirm: (id: string) => api.patch<Visitor>(`/visitors/${id}/confirm`),
+  confirm: (id: string) => api.patch<Visitor>(`/visitors/${id}/confirm`).then(enrichVisitor),
   approve: (id: string, guestTagNumber: string, modeOfEntry: ModeOfEntry) =>
-    api.patch<Visitor>(`/visitors/${id}/approve`, { guestTagNumber, modeOfEntry }),
-  signOut: (id: string) => api.patch<Visitor>(`/visitors/${id}/sign-out`),
+    api.patch<Visitor>(`/visitors/${id}/approve`, { guestTagNumber, modeOfEntry }).then(enrichVisitor),
+  signOut: (id: string) => api.patch<Visitor>(`/visitors/${id}/sign-out`).then(enrichVisitor),
   /** Host ending their own signed-in visitor's appointment. */
-  endAppointment: (id: string) => api.patch<Visitor>(`/visitors/${id}/end-appointment`),
-  cancel: (id: string) => api.patch<Visitor>(`/visitors/${id}/cancel`),
-  blacklist: (id: string, reason: string) => api.patch<Visitor>(`/visitors/${id}/blacklist`, { reason }),
-  unblacklist: (id: string) => api.patch<Visitor>(`/visitors/${id}/unblacklist`),
-  list: (filters?: VisitorFilters) => api.get<Visitor[]>("/visitors", { query: filters }),
-  mine: (filters?: Omit<VisitorFilters, "hostId">) => api.get<Visitor[]>("/visitors/mine", { query: filters }),
-  today: () => api.get<Visitor[]>("/visitors/today"),
-  get: (id: string) => api.get<Visitor>(`/visitors/${id}`),
+  endAppointment: (id: string) => api.patch<Visitor>(`/visitors/${id}/end-appointment`).then(enrichVisitor),
+  cancel: (id: string) => api.patch<Visitor>(`/visitors/${id}/cancel`).then(enrichVisitor),
+  blacklist: (id: string, reason: string) =>
+    api.patch<Visitor>(`/visitors/${id}/blacklist`, { reason }).then(enrichVisitor),
+  unblacklist: (id: string) => api.patch<Visitor>(`/visitors/${id}/unblacklist`).then(enrichVisitor),
+  list: (filters?: VisitorFilters) => api.get<Visitor[]>("/visitors", { query: filters }).then(enrichVisitors),
+  mine: (filters?: Omit<VisitorFilters, "hostId">) =>
+    api.get<Visitor[]>("/visitors/mine", { query: filters }).then(enrichVisitors),
+  today: () => api.get<Visitor[]>("/visitors/today").then(enrichVisitors),
+  get: (id: string) => api.get<Visitor>(`/visitors/${id}`).then(enrichVisitor),
 };
 
 /* ----------------------------------------------------------- contractors */

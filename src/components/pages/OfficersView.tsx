@@ -58,7 +58,7 @@ export function OfficersView({ canManage = true }: { canManage?: boolean }) {
     { key: "rank", header: "Rank", render: (o) => o.rank },
     { key: "appointment", header: "Appointment", render: (o) => o.appointment },
     { key: "department", header: "Department", render: (o) => o.department },
-    { key: "branch", header: "Branch", render: (o) => o.branch },
+    { key: "branch", header: "Directorate", render: (o) => o.branch },
     { key: "serviceNumber", header: "Service no.", render: (o) => o.serviceNumber },
   ];
 
@@ -96,7 +96,7 @@ export function OfficersView({ canManage = true }: { canManage?: boolean }) {
                 ["Rank", (o) => o.rank],
                 ["Appointment", (o) => o.appointment],
                 ["Department", (o) => o.department],
-                ["Branch", (o) => o.branch],
+                ["Directorate", (o) => o.branch],
                 ["Service no.", (o) => o.serviceNumber],
               ])
             }
