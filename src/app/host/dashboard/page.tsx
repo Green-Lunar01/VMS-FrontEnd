@@ -14,6 +14,7 @@ import { useApi } from "@/lib/api/useApi";
 import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { ID_TYPE_LABEL, ID_TYPE_OPTIONS, VISITOR_STATUS_LABEL, VISITOR_TYPE_LABEL } from "@/lib/labels";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { agentName, cn, formatDate, timeRange } from "@/lib/utils";
 import type { Visitor, VisitorStatus } from "@/lib/types";
 
@@ -28,10 +29,6 @@ const TABS: { value: VisitorStatus | "all"; label: string; heading: string }[] =
 const inputClass =
   "h-11 w-full rounded-[4px] border border-border bg-white px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-border focus:border-primary";
 
-const COUNTRIES = [
-  { label: "Nigeria", value: "Nigeria" },
-  { label: "Ghana", value: "Ghana" },
-];
 const RANKS = [
   { label: "Major", value: "Major" },
   { label: "Colonel", value: "Colonel" },
@@ -205,7 +202,7 @@ export default function HostDashboardPage() {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-[136px] py-8">
               <Field label="Visitor's country">
-                <Dropdown className="h-11 w-full" value={country} options={COUNTRIES} onChange={setCountry} />
+                <Dropdown className="h-11 w-full" value={country} options={COUNTRY_OPTIONS} onChange={setCountry} />
               </Field>
               <Field label="Full name">
                 <input name="name" className={inputClass} placeholder="Full name" required />
@@ -240,8 +237,8 @@ export default function HostDashboardPage() {
               </Field>
               <Field label="Expected time ( FRO/TO)">
                 <div className="flex gap-3">
-                  <input name="expectedTimeFrom" className={inputClass} placeholder="9:00 AM" required />
-                  <input name="expectedTimeTo" className={inputClass} placeholder="8:00 AM" required />
+                  <input name="expectedTimeFrom" className={inputClass} type="time" required />
+                  <input name="expectedTimeTo" className={inputClass} type="time" required />
                 </div>
               </Field>
 

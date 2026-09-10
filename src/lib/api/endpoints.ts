@@ -171,10 +171,14 @@ export type WalkInVisitorPayload = Omit<
 };
 
 /**
- * Visitor.host only ever carries name/email from the API — rank and department
- * live on the host's separate Officer profile, not on the User record the
- * visitor endpoints populate. Enriched here from a byId lookup so every screen
- * showing "Host rank"/"Host department" gets real values instead of blanks.
+ * Visitor.host comes back in two different shapes depending on the endpoint:
+ * populated with just {_id, name, email} on /visitors, /visitors/mine and
+ * /visitors/today, or as a bare id string everywhere else (confirm, approve,
+ * sign-out, cancel, end-appointment, blacklist — none of those populate it at
+ * all). Neither shape carries rank/department, which live on the host's
+ * separate Officer profile. Rebuilt here from a byId lookup against the
+ * officers list so every screen reading host.name/rank/department gets real
+ * values no matter which endpoint the visitor came from.
  */
 async function hostOfficerMap(): Promise<Map<string, Officer>> {
   const officers = await officersApi.list().catch(() => []);
@@ -182,9 +186,22 @@ async function hostOfficerMap(): Promise<Map<string, Officer>> {
 }
 
 function applyHostDetails(visitor: Visitor, byUserId: Map<string, Officer>): Visitor {
-  const officer = visitor.host?._id ? byUserId.get(visitor.host._id) : undefined;
-  if (!officer || !visitor.host) return visitor;
-  return { ...visitor, host: { ...visitor.host, rank: officer.rank, department: officer.department } };
+  const rawHost = visitor.host as unknown as string | Visitor["host"] | null | undefined;
+  const hostId = typeof rawHost === "string" ? rawHost : rawHost?._id;
+  const officer = hostId ? byUserId.get(hostId) : undefined;
+  if (!hostId || !officer) return visitor;
+  const existing = rawHost && typeof rawHost === "object" ? rawHost : undefined;
+  return {
+    ...visitor,
+    host: {
+      _id: hostId,
+      name: officer.name,
+      rank: officer.rank,
+      department: officer.department,
+      phone: existing?.phone ?? "",
+      user: hostId,
+    },
+  };
 }
 
 async function enrichVisitor(visitor: Visitor): Promise<Visitor> {

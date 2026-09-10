@@ -9,7 +9,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { VisitorDetailDrawer } from "@/components/dashboard/VisitorDetailDrawer";
 import { ApproveVisitorModal } from "@/components/dashboard/ApproveVisitorModal";
-import { VISITOR_TYPE_LABEL } from "@/lib/labels";
+import { VISITOR_STATUS_LABEL, VISITOR_TYPE_LABEL } from "@/lib/labels";
 import { DATE_OPTIONS, VISITOR_TYPE_OPTIONS, SIGN_STATE_OPTIONS } from "@/lib/filter-options";
 import { resolveDateRange } from "@/lib/date-range";
 import { visitorsApi } from "@/lib/api/endpoints";
@@ -90,17 +90,18 @@ function VisitorsLogContent({ canBlacklist, canApprove }: { canBlacklist: boolea
   const columns: Column<Visitor>[] = [
     { key: "name", header: "Name", width: "1.35fr", render: (v) => v.name },
     { key: "visitorType", header: "Visitor type", render: (v) => VISITOR_TYPE_LABEL[v.visitorType] ?? v.visitorType },
+    { key: "status", header: "Status", render: (v) => VISITOR_STATUS_LABEL[v.status] ?? v.status },
     { key: "hostName", header: "Host name", render: (v) => v.host?.name ?? "—" },
     { key: "hostRank", header: "Host rank", render: (v) => v.host?.rank ?? "—" },
     { key: "signIn", header: "Sign in time", render: (v) => v.signInTime ?? "—" },
-    { key: "signOut", header: "Sign out time", render: (v) => v.signOutTime ?? "—" },
+    { key: "signOut", header: "Sign out time", render: (v) => v.signOutTime ?? "Not yet signed out" },
     { key: "department", header: "Department", render: (v) => v.host?.department ?? "—" },
   ];
 
   if (canApprove) {
     columns.push({
       key: "action",
-      header: "",
+      header: "Actions",
       width: "130px",
       render: (v) => {
         // approve() rejects anything still awaiting the host's confirmation.
@@ -173,7 +174,7 @@ function VisitorsLogContent({ canBlacklist, canApprove }: { canBlacklist: boolea
                 ["Sign in time", (v) => v.signInTime ?? ""],
                 ["Sign out time", (v) => v.signOutTime ?? ""],
                 ["Department", (v) => v.host?.department ?? ""],
-                ["Status", (v) => v.status],
+                ["Status", (v) => VISITOR_STATUS_LABEL[v.status] ?? v.status],
               ])
             }
           >

@@ -11,15 +11,11 @@ import { officersApi, visitorsApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useApi } from "@/lib/api/useApi";
 import { ID_TYPE_OPTIONS } from "@/lib/labels";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
 import type { Officer } from "@/lib/types";
 
 const inputClass =
   "h-11 w-full rounded-[4px] border border-border bg-white px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-border focus:border-primary";
-
-const COUNTRIES = [
-  { label: "Nigeria", value: "Nigeria" },
-  { label: "Ghana", value: "Ghana" },
-];
 
 const VISITOR_TYPES = [
   { label: "Family", value: "family" },
@@ -114,7 +110,7 @@ export function WalkInForm({ onCreated }: { onCreated?: () => void }) {
       </div>
 
       <Field label="Visitor's country">
-        <Dropdown className="h-11 w-full" value={country} options={COUNTRIES} onChange={setCountry} />
+        <Dropdown className="h-11 w-full" value={country} options={COUNTRY_OPTIONS} onChange={setCountry} />
       </Field>
       <Field label="Full name">
         <input name="name" className={inputClass} placeholder="Full name" required />

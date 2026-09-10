@@ -47,7 +47,7 @@ export function Dropdown({
         <DropdownMenu.Content
           align={align}
           sideOffset={4}
-          className="z-50 min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-hidden rounded-[4px] border border-border bg-white py-1 shadow-lg"
+          className="z-50 max-h-[320px] min-w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto rounded-[4px] border border-border bg-white py-1 shadow-lg"
         >
           {options.map((opt) => (
             <DropdownMenu.Item
