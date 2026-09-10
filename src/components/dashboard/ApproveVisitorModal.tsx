@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
+import Image from "next/image";
 import { Modal } from "@/components/ui/Modal";
 import { Input, Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -21,9 +22,17 @@ export function ApproveVisitorModal({
 }) {
   const [guestTagNumber, setGuestTagNumber] = useState("");
   const [modeOfEntry, setModeOfEntry] = useState<ModeOfEntry | "">("");
-
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  function handleClose() {
+    setGuestTagNumber("");
+    setModeOfEntry("");
+    setError(null);
+    setDone(false);
+    onClose();
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -32,9 +41,7 @@ export function ApproveVisitorModal({
     setError(null);
     try {
       await onApprove?.(guestTagNumber, modeOfEntry);
-      setGuestTagNumber("");
-      setModeOfEntry("");
-      onClose();
+      setDone(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.messages.join(" ") : "Could not sign this visitor in.");
     } finally {
@@ -42,8 +49,25 @@ export function ApproveVisitorModal({
     }
   }
 
+  if (done) {
+    return (
+      <Modal open={open} onClose={handleClose} hideHeader className="w-[340px]">
+        <div className="flex flex-col items-center gap-4 px-8 py-12 text-center">
+          <Image src="/branding/success-check.png" alt="" width={72} height={72} />
+          <div>
+            <p className="text-base font-bold text-ink">Visitor signed in</p>
+            <p className="mt-1 text-sm text-muted">{visitor?.name} has been signed in at the gate.</p>
+          </div>
+          <Button fullWidth onClick={handleClose}>
+            Done
+          </Button>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
-    <Modal open={open} onClose={onClose} title="Sign in visitor">
+    <Modal open={open} onClose={handleClose} title="Sign in visitor">
       <p className="mb-4 text-sm text-muted">
         Confirm gate details for <span className="font-semibold text-ink">{visitor?.name}</span> before signing them in.
       </p>
@@ -73,7 +97,7 @@ export function ApproveVisitorModal({
         )}
 
         <div className="mt-2 flex justify-end gap-3">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={handleClose}>
             Cancel
           </Button>
           <Button type="submit" disabled={busy}>

@@ -320,9 +320,18 @@ export default function HostDashboardPage() {
         )}
       </div>
 
-      <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} hideHeader className="w-[280px]">
-        <div className="flex h-[280px] items-center justify-center">
-          <Image src="/branding/success-check.png" alt="Submitted" width={72} height={72} />
+      <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} hideHeader className="w-[340px]">
+        <div className="flex flex-col items-center gap-4 px-8 py-12 text-center">
+          <Image src="/branding/success-check.png" alt="" width={72} height={72} />
+          <div>
+            <p className="text-base font-bold text-ink">Visitor submitted</p>
+            <p className="mt-1 text-sm text-muted">
+              Security has been notified and will sign your visitor in on arrival.
+            </p>
+          </div>
+          <Button fullWidth onClick={() => setConfirmOpen(false)}>
+            Done
+          </Button>
         </div>
       </Modal>
     </div>
