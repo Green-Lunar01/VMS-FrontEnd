@@ -15,6 +15,7 @@ import { Camera01Icon } from "@hugeicons/core-free-icons";
 import { contractorsApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useApi } from "@/lib/api/useApi";
+import { useInstitutionBrand } from "@/lib/institution/InstitutionBrandContext";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import type { Contractor, ContractorVisit } from "@/lib/types";
 
@@ -52,6 +53,8 @@ export function ContractorsView({ canManage = true }: { canManage?: boolean }) {
 }
 
 function AddContractorTab() {
+  const brand = useInstitutionBrand();
+  const institutionName = brand?.name ?? "Institution";
   const [created, setCreated] = useState<Contractor | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,9 +92,9 @@ function AddContractorTab() {
           <div className="border-b border-border py-4 text-center text-base font-bold text-ink">Add new Contractor</div>
           <div className="px-8 py-7">
             <div className="flex items-center gap-3 pb-6">
-              <Image src="/branding/dhq-crest.png" alt="" width={52} height={52} />
+              {brand?.logoUrl && <Image src={brand.logoUrl} alt="" width={52} height={52} />}
               <div>
-                <p className="font-display text-[22px] leading-tight text-primary">DEFENCE HEADQUARTERS</p>
+                <p className="font-display text-[22px] leading-tight text-primary">{institutionName.toUpperCase()}</p>
                 <p className="text-center text-base font-bold tracking-wide text-ink">CONTRACTOR PERMIT</p>
               </div>
             </div>

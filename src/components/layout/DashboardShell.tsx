@@ -12,8 +12,6 @@ export function DashboardShell({
   navItems,
   userName,
   userPhotoUrl,
-  institutionName,
-  shortName,
   showVisitorShortcuts = true,
   onShowSignedIn,
   onShowSignedOut,
@@ -22,8 +20,6 @@ export function DashboardShell({
   navItems: NavItem[];
   userName: string;
   userPhotoUrl?: string;
-  institutionName?: string;
-  shortName?: string;
   showVisitorShortcuts?: boolean;
   onShowSignedIn?: () => void;
   onShowSignedOut?: () => void;
@@ -34,12 +30,7 @@ export function DashboardShell({
 
   return (
     <div className="flex h-screen overflow-hidden bg-grey">
-      <Sidebar
-        items={navItems}
-        institutionName={institutionName}
-        shortName={shortName}
-        onLogout={logout}
-      />
+      <Sidebar items={navItems} onLogout={logout} />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar
           userName={userName}

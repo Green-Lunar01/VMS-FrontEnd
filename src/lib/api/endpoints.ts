@@ -79,6 +79,12 @@ export const institutionsApi = {
   stats: () => api.get<InstitutionStats>("/institutions/stats"),
   get: (id: string) => api.get<Institution>(`/institutions/${id}`),
   me: () => api.get<Institution>("/institutions/me"),
+  /**
+   * Read-only name+logo for roles that aren't Institution Admin — Security
+   * Officers and Hosts need this for their own sidebar crest but can't call
+   * the admin-only /institutions/me.
+   */
+  myBrand: () => api.get<{ name: string; logoUrl?: string }>("/institutions/me/brand"),
   uploadMyLogo: (file: File) => {
     const fd = new FormData();
     fd.append("logo", file);

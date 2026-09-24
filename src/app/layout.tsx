@@ -16,7 +16,7 @@ const montserratUnderline = Montserrat_Underline({
 });
 
 export const metadata: Metadata = {
-  title: "DHQ Visitors Management System",
+  title: "Green Lunar VMS",
   description: "Visitors, contractors and dispatch management for institutions.",
 };
 

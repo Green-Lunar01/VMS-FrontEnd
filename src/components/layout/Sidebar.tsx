@@ -8,25 +8,26 @@ import { Icon } from "@/components/icons/Icon";
 import { Logout03Icon } from "@hugeicons/core-free-icons";
 import type { NavItem } from "@/lib/nav-config";
 import { InstitutionCrest } from "@/components/layout/InstitutionCrest";
+import { useInstitutionBrand } from "@/lib/institution/InstitutionBrandContext";
 
 export function Sidebar({
   items,
-  institutionName = "Defence Headquarters",
-  shortName = "DHQ",
   onLogout,
 }: {
   items: NavItem[];
-  institutionName?: string;
-  shortName?: string;
   onLogout?: () => void;
 }) {
   const pathname = usePathname();
+  const brand = useInstitutionBrand();
+  const institutionName = brand?.name ?? "Institution";
 
   return (
     <aside className="flex h-full w-[235px] shrink-0 flex-col overflow-y-auto border-r border-divider bg-white">
       <div className="flex flex-col items-center gap-1 px-4 pb-6 pt-5" title={institutionName}>
-        <InstitutionCrest size={108} />
-        <p className="text-center font-display text-[26px] leading-tight text-primary">{shortName}</p>
+        <InstitutionCrest size={108} src={brand?.logoUrl} name={institutionName} />
+        <p className="max-w-full break-words text-center font-display text-[22px] leading-tight text-primary">
+          {institutionName}
+        </p>
       </div>
       <div className="border-t border-divider" />
 

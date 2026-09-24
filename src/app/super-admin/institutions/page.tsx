@@ -169,7 +169,7 @@ function RegisterInstitutionForm({ onDone }: { onDone: () => void }) {
             <input name="name" className={inputClass} placeholder="Organization name" required />
           </Field>
           <Field label="Email address">
-            <input name="email" className={inputClass} type="email" placeholder="DHQ@gmail.com" required />
+            <input name="email" className={inputClass} type="email" placeholder="institution@example.com" required />
           </Field>
           <Field label="Organization address">
             <input name="address" className={inputClass} placeholder="Area 7, Garki, Abuja" required />

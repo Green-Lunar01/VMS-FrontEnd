@@ -1,16 +1,18 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useInstitutionBrand } from "@/lib/institution/InstitutionBrandContext";
 import type { Contractor } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
-/** Faint repeated-crest pattern used inside the permit cards. */
-function CrestPattern() {
+/** Faint repeated-crest pattern used inside the permit cards. Skipped without a logo to avoid a broken tile. */
+function CrestPattern({ logoUrl }: { logoUrl?: string }) {
+  if (!logoUrl) return null;
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute inset-0 opacity-[0.07]"
       style={{
-        backgroundImage: "url('/branding/dhq-crest.png')",
+        backgroundImage: `url('${logoUrl}')`,
         backgroundSize: "46px 46px",
         backgroundRepeat: "repeat",
       }}
@@ -28,14 +30,17 @@ function Row({ label, value }: { label: string; value?: string }) {
 }
 
 export function PermitFront({ contractor, className }: { contractor?: Partial<Contractor>; className?: string }) {
+  const brand = useInstitutionBrand();
+  const institutionName = brand?.name ?? "Institution";
+
   return (
     <div className={cn("relative overflow-hidden rounded-[10px] border border-border bg-white p-6", className)}>
-      <CrestPattern />
+      <CrestPattern logoUrl={brand?.logoUrl} />
       <div className="relative">
         <div className="flex items-center gap-3">
-          <Image src="/branding/dhq-crest.png" alt="" width={52} height={52} />
+          {brand?.logoUrl && <Image src={brand.logoUrl} alt="" width={52} height={52} />}
           <div>
-            <p className="font-display text-[22px] leading-tight text-primary">DEFENCE HEADQUARTERS</p>
+            <p className="font-display text-[22px] leading-tight text-primary">{institutionName.toUpperCase()}</p>
             <p className="text-center text-base font-bold tracking-wide text-ink">CONTRACTOR PERMIT</p>
           </div>
         </div>
@@ -70,6 +75,9 @@ export function PermitFront({ contractor, className }: { contractor?: Partial<Co
 }
 
 export function PermitBack({ className }: { className?: string }) {
+  const brand = useInstitutionBrand();
+  const institutionName = brand?.name ?? "Institution";
+
   return (
     <div
       className={cn(
@@ -77,14 +85,13 @@ export function PermitBack({ className }: { className?: string }) {
         className,
       )}
     >
-      <CrestPattern />
+      <CrestPattern logoUrl={brand?.logoUrl} />
       <div className="relative flex flex-col items-center">
-        <Image src="/branding/dhq-crest.png" alt="" width={62} height={62} />
-        <p className="mt-4 font-display text-[22px] leading-tight text-primary">DEFENCE HEADQUARTERS</p>
-        <p className="text-lg font-bold tracking-wide text-ink">ABUJA</p>
+        {brand?.logoUrl && <Image src={brand.logoUrl} alt="" width={62} height={62} />}
+        <p className="mt-4 font-display text-[22px] leading-tight text-primary">{institutionName.toUpperCase()}</p>
         <p className="mt-5 max-w-[380px] text-sm leading-relaxed text-ink">
-          This Personnel Identity Tag is the Property of Deference Headquarters. If found please return to Deference
-          Headquarters Complex, Area 7, Garki, Abuja or nearest Military or Police Post
+          This Personnel Identity Tag is the property of {institutionName}. If found, please return to{" "}
+          {brand?.address || institutionName} or the nearest Military or Police Post.
         </p>
       </div>
     </div>

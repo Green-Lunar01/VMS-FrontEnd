@@ -7,6 +7,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { InstitutionCrest } from "@/components/layout/InstitutionCrest";
+import { useInstitutionBrand } from "@/lib/institution/InstitutionBrandContext";
 import { Avatar } from "@/components/ui/Avatar";
 import { Icon } from "@/components/icons/Icon";
 import { Call02Icon, Notification01Icon, UserGroup03Icon, Logout03Icon } from "@hugeicons/core-free-icons";
@@ -26,15 +27,19 @@ export function HostShell({
 }) {
   const pathname = usePathname();
   const { logout } = useAuth();
+  const brand = useInstitutionBrand();
+  const institutionName = brand?.name ?? "Institution";
   const [notifOpen, setNotifOpen] = useState(false);
   const active = pathname?.startsWith("/host/dashboard");
 
   return (
     <div className="flex h-screen overflow-hidden bg-grey">
       <aside className="hidden h-full w-[196px] shrink-0 flex-col overflow-y-auto border-r border-divider bg-white md:flex">
-        <div className="flex flex-col items-center gap-1 px-4 pb-5 pt-4">
-          <InstitutionCrest size={96} />
-          <p className="font-display text-[24px] leading-tight text-primary">DHQ</p>
+        <div className="flex flex-col items-center gap-1 px-4 pb-5 pt-4" title={institutionName}>
+          <InstitutionCrest size={96} src={brand?.logoUrl} name={institutionName} />
+          <p className="max-w-full break-words text-center font-display text-[20px] leading-tight text-primary">
+            {institutionName}
+          </p>
         </div>
         <div className="border-t border-divider" />
 
