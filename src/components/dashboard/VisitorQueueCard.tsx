@@ -84,6 +84,7 @@ export function VisitorQueueCard({
         <Row label="Host rank" value={visitor.host.rank} />
         <Row label="Visitor's country" value={visitor.country} />
         <Row label="ID type" value={ID_TYPE_LABEL[visitor.idType]} />
+        <Row label="Plate number" value={visitor.plateNumber} />
         <Row label="Host department" value={visitor.host.department} />
         {visitor.hostServiceType && (
           <Row label="Host service type" value={SERVICE_TYPE_LABEL[visitor.hostServiceType as ServiceType]} />

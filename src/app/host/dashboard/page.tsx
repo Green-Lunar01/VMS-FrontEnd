@@ -417,6 +417,7 @@ function VisitorDetail({
         <DetailRow label="Host rank" value={visitor.host.rank} />
         <DetailRow label="Visitor's country" value={visitor.country} />
         <DetailRow label="ID type" value={ID_TYPE_LABEL[visitor.idType]} />
+        <DetailRow label="Plate number" value={visitor.plateNumber} />
         <DetailRow label="Host department" value={visitor.host.department} />
         <DetailRow label="Escort" value={visitor.escortCount} />
         <DetailRow label="Escort names" value={visitor.escortNames.join(", ")} />

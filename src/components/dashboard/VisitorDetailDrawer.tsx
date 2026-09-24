@@ -106,6 +106,7 @@ export function VisitorDetailDrawer({
             <Row label="Host Rank" value={visitor.host.rank} />
             <Row label="Visitor's Country" value={visitor.country} />
             <Row label="ID type" value={ID_TYPE_LABEL[visitor.idType]} />
+            <Row label="Plate number" value={visitor.plateNumber} />
             <Row label="Host Department" value={visitor.host.department} />
             <Row label="Escort" value={visitor.escortCount} />
             <Row label="Escort names" value={visitor.escortNames.join(", ")} />

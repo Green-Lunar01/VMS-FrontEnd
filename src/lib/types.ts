@@ -101,6 +101,8 @@ export interface Visitor {
   visitorTypeOther?: string;
   escortCount: number;
   escortNames: string[];
+  /** Only ever set on a walk-in — the host's own submission form doesn't collect it. */
+  plateNumber?: string;
   /** Walk-ins have none of these three — they arrived without a prior appointment. */
   expectedDate?: string;
   expectedTimeFrom?: string;

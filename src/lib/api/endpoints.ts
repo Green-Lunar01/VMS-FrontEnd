@@ -176,6 +176,8 @@ export type WalkInVisitorPayload = Omit<
   expectedDate?: string;
   expectedTimeFrom?: string;
   expectedTimeTo?: string;
+  /** Walk-in only — the host's own submission form doesn't accept this yet. */
+  plateNumber?: string;
 };
 
 /**
