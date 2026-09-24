@@ -24,9 +24,11 @@ const inputClass =
 export function PhotoBlock({
   isOrganization,
   onUploaded,
+  onOrgUploaded,
 }: {
   isOrganization?: boolean;
   onUploaded?: (user: import("@/lib/types").User) => void;
+  onOrgUploaded?: (institution: import("@/lib/types").Institution) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -37,6 +39,7 @@ export function PhotoBlock({
       if (isOrganization) {
         const inst = await institutionsApi.uploadMyLogo(file);
         if (inst.logoUrl) setPreview(inst.logoUrl);
+        onOrgUploaded?.(inst);
       } else {
         const updated = await usersApi.uploadPhoto(file);
         if (updated.photoUrl) setPreview(updated.photoUrl);
