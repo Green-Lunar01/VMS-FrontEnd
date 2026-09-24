@@ -20,12 +20,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
 function AdminShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
-  const { data: institution, loading, setData: setInstitution } = useApi(() => institutionsApi.me(), []);
+  const { data: institution, setData: setInstitution } = useApi(() => institutionsApi.me(), []);
 
-  // Held back until we know whether a logo already exists, so the dashboard
-  // never flashes on screen only to be immediately replaced by the gate.
-  if (loading) return null;
-
+  // Rendered optimistically rather than blocked on this fetch resolving —
+  // the common case (an institution that already has a logo) then costs no
+  // extra wait at all, and the page's own data fetches start in parallel
+  // instead of queued behind this one. Only a brand-new institution's very
+  // first post-password-change login briefly shows the dashboard before
+  // this gate takes over once the fetch comes back with no logoUrl.
   if (institution && !institution.logoUrl) {
     return <InstitutionLogoGate institutionName={institution.name} onDone={setInstitution} />;
   }
