@@ -12,12 +12,8 @@ import type { IconSvgElement } from "@hugeicons/react";
 import { analyticsApi } from "@/lib/api/endpoints";
 import type { AdminPerformance, OfficerPerformance } from "@/lib/api/endpoints";
 import { useApi } from "@/lib/api/useApi";
-
-const TABS = [
-  { value: "overview", label: "Overview" },
-  { value: "admins", label: "Admins" },
-  { value: "officers", label: "Residents" },
-];
+import { useInstitutionBrand } from "@/lib/institution/InstitutionBrandContext";
+import { getOfficerFieldConfig } from "@/lib/institution/officerFields";
 
 const currentYear = new Date().getFullYear();
 const YEARS = [0, 1, 2].map((offset) => {
@@ -55,6 +51,8 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
 }
 
 export default function AnalyticsPage() {
+  const brand = useInstitutionBrand();
+  const personPlural = getOfficerFieldConfig(brand?.type).personPlural;
   const [tab, setTab] = useState("overview");
   const [year, setYear] = useState(String(currentYear));
 
@@ -65,13 +63,19 @@ export default function AnalyticsPage() {
   const totalSignedIn = months.reduce((sum, m) => sum + (m.signedIn ?? 0), 0);
   const totalSignedOut = months.reduce((sum, m) => sum + (m.signedOut ?? 0), 0);
 
+  const tabs = [
+    { value: "overview", label: "Overview" },
+    { value: "admins", label: "Admins" },
+    { value: "officers", label: personPlural },
+  ];
+
   return (
     <div>
       <PageTitle>Analytics</PageTitle>
 
       <PageCard className="px-7 py-7">
         <h2 className="mb-5 text-2xl font-bold text-ink">Report</h2>
-        <TextTabs items={TABS} value={tab} onChange={setTab} className="mb-7" />
+        <TextTabs items={tabs} value={tab} onChange={setTab} className="mb-7" />
 
         {tab === "overview" && (
           <>
@@ -80,7 +84,7 @@ export default function AnalyticsPage() {
               <StatCard
                 icon={PrisonGuardIcon}
                 value={overview.data?.totalOfficers ?? "—"}
-                label="Total Residents"
+                label={`Total ${personPlural}`}
               />
               <StatCard
                 icon={Briefcase01Icon}
@@ -140,7 +144,7 @@ export default function AnalyticsPage() {
         )}
 
         {tab === "admins" && <AdminsPerformance />}
-        {tab === "officers" && <OfficersPerformance />}
+        {tab === "officers" && <OfficersPerformance personPlural={personPlural} showRank={getOfficerFieldConfig(brand?.type).rank !== "hidden"} />}
       </PageCard>
     </div>
   );
@@ -171,20 +175,21 @@ function AdminsPerformance() {
   );
 }
 
-function OfficersPerformance() {
+function OfficersPerformance({ personPlural, showRank }: { personPlural: string; showRank: boolean }) {
   const { data, loading, error } = useApi(() => analyticsApi.officersPerformance(), []);
   const rows = (data ?? []).map((r, i) => ({ ...r, _id: r._id ?? `officer-${i}` }));
 
-  const columns: Column<OfficerPerformance & { _id: string }>[] = [
-    { key: "rank", header: "Rank", render: (r) => r.rank },
+  const columns: Column<OfficerPerformance & { _id: string }>[] = [];
+  if (showRank) columns.push({ key: "rank", header: "Rank", render: (r) => r.rank });
+  columns.push(
     { key: "name", header: "Name", render: (r) => r.name ?? "—" },
     { key: "department", header: "Department", render: (r) => r.department ?? "—" },
     { key: "visitors", header: "No of visitors", render: (r) => r.visitors ?? 0 },
-  ];
+  );
 
   return (
     <div className="rounded-[8px] border border-border px-8 py-7">
-      <h3 className="mb-5 border-b border-divider pb-4 text-xl font-bold text-ink">Residents Performance</h3>
+      <h3 className="mb-5 border-b border-divider pb-4 text-xl font-bold text-ink">{personPlural} Performance</h3>
       {loading ? (
         <p className="py-16 text-center text-sm text-muted">Loading&hellip;</p>
       ) : error ? (

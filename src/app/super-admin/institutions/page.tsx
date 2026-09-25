@@ -5,13 +5,15 @@ import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Button } from "@/components/ui/Button";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { InstitutionDetailDrawer } from "@/components/dashboard/InstitutionDetailDrawer";
 import { institutionsApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useApi } from "@/lib/api/useApi";
 import { setStoredTokens } from "@/lib/auth/storage";
 import { ROLE_HOME, useAuth } from "@/lib/auth/AuthProvider";
-import type { Institution } from "@/lib/types";
+import { INSTITUTION_TYPE_LABEL, INSTITUTION_TYPE_OPTIONS } from "@/lib/labels";
+import type { Institution, InstitutionType } from "@/lib/types";
 
 const inputClass =
   "h-11 w-full rounded-[4px] border border-border bg-white px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-border focus:border-primary";
@@ -70,6 +72,7 @@ export default function InstitutionsPage() {
     { key: "email", header: "Email address", render: (i) => i.email },
     { key: "address", header: "Address", render: (i) => i.address },
     { key: "phone", header: "Phone number", render: (i) => i.phone },
+    { key: "type", header: "Type", render: (i) => (i.type ? INSTITUTION_TYPE_LABEL[i.type] : "—") },
     {
       key: "status",
       header: "Status",
@@ -129,6 +132,7 @@ export default function InstitutionsPage() {
 }
 
 function RegisterInstitutionForm({ onDone }: { onDone: () => void }) {
+  const [type, setType] = useState<InstitutionType>("military_office");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -149,6 +153,7 @@ function RegisterInstitutionForm({ onDone }: { onDone: () => void }) {
         address: String(form.get("address") ?? ""),
         phone: String(form.get("phone") ?? ""),
         password,
+        type,
       });
       onDone();
     } catch (err) {
@@ -176,6 +181,9 @@ function RegisterInstitutionForm({ onDone }: { onDone: () => void }) {
           </Field>
           <Field label="Phone number">
             <input name="phone" className={inputClass} placeholder="0909987" required />
+          </Field>
+          <Field label="Institution type">
+            <Dropdown className="h-11 w-full" value={type} options={INSTITUTION_TYPE_OPTIONS} onChange={(v) => setType(v as InstitutionType)} />
           </Field>
           <Field label="Password">
             <input name="password" className={inputClass} type="password" placeholder="••••••••••••••••" required />

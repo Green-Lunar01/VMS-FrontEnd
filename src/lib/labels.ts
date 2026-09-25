@@ -1,4 +1,4 @@
-import type { IdType, VisitorType, VisitorStatus, ServiceType, ModeOfEntry } from "@/lib/types";
+import type { IdType, VisitorType, VisitorStatus, ServiceType, ModeOfEntry, InstitutionType } from "@/lib/types";
 
 export const ID_TYPE_LABEL: Record<IdType, string> = {
   nin: "NIN",
@@ -55,3 +55,17 @@ export const VISITOR_STATUS_LABEL: Record<VisitorStatus, string> = {
   signed_out: "Signed out",
   cancelled: "Cancelled",
 };
+
+export const INSTITUTION_TYPE_LABEL: Record<InstitutionType, string> = {
+  military_office: "Military Office",
+  military_estate: "Military Estate",
+  civilian_office: "Civilian Office",
+  civilian_estate: "Civilian Estate",
+};
+
+export const INSTITUTION_TYPE_OPTIONS: { label: string; value: InstitutionType }[] = [
+  { label: "Military Office", value: "military_office" },
+  { label: "Military Estate", value: "military_estate" },
+  { label: "Civilian Office", value: "civilian_office" },
+  { label: "Civilian Estate", value: "civilian_estate" },
+];

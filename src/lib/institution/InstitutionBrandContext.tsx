@@ -2,17 +2,21 @@
 
 import { createContext, useContext } from "react";
 import type { ReactNode } from "react";
+import type { InstitutionType } from "@/lib/types";
 
 /**
  * The logged-in user's own institution — used for the sidebar crest/wordmark
  * everywhere, plus the contractor permit template (Institution Admin only,
  * where `address` is always populated since that flow reads the full
  * Institution record rather than the lightweight /me/brand endpoint).
+ * `type` drives which officer/resident fields and labels this institution
+ * uses — see src/lib/institution/officerFields.ts.
  */
 export interface InstitutionBrand {
   name: string;
   logoUrl?: string;
   address?: string;
+  type?: InstitutionType;
 }
 
 const InstitutionBrandContext = createContext<InstitutionBrand | null>(null);

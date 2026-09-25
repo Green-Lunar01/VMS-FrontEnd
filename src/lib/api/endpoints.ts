@@ -5,6 +5,7 @@ import type {
   ContractorVisit,
   Dispatch,
   Institution,
+  InstitutionType,
   ModeOfEntry,
   Officer,
   Role,
@@ -73,18 +74,25 @@ export interface InstitutionStats {
 }
 
 export const institutionsApi = {
-  create: (payload: { name: string; email: string; phone: string; address: string; password: string }) =>
-    api.post<Institution>("/institutions", payload),
+  create: (payload: {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    password: string;
+    type: InstitutionType;
+  }) => api.post<Institution>("/institutions", payload),
   list: () => api.get<Institution[]>("/institutions"),
   stats: () => api.get<InstitutionStats>("/institutions/stats"),
   get: (id: string) => api.get<Institution>(`/institutions/${id}`),
   me: () => api.get<Institution>("/institutions/me"),
   /**
-   * Read-only name+logo for roles that aren't Institution Admin — Security
-   * Officers and Hosts need this for their own sidebar crest but can't call
-   * the admin-only /institutions/me.
+   * Read-only name+logo+type for roles that aren't Institution Admin —
+   * Security Officers and Hosts need this for their own sidebar crest and to
+   * know which institutionType-specific labels/fields to render, but can't
+   * call the admin-only /institutions/me.
    */
-  myBrand: () => api.get<{ name: string; logoUrl?: string }>("/institutions/me/brand"),
+  myBrand: () => api.get<{ name: string; logoUrl?: string; type?: InstitutionType }>("/institutions/me/brand"),
   uploadMyLogo: (file: File) => {
     const fd = new FormData();
     fd.append("logo", file);
@@ -102,16 +110,24 @@ export const institutionsApi = {
 
 /* -------------------------------------------------------------- officers */
 
+/**
+ * Every field beyond name/email/phone is accepted regardless of institution
+ * type (the backend is lenient by design — see FRONTEND_INTEGRATION_GUIDE.md
+ * §5), so all of them are optional here. Which ones the form actually shows
+ * and sends is driven by src/lib/institution/officerFields.ts.
+ */
 export interface CreateOfficerPayload {
   name: string;
   email: string;
   phone: string;
-  rank: string;
-  serviceType: string;
-  branch: string;
-  serviceNumber: string;
-  department: string;
-  appointment: string;
+  rank?: string;
+  serviceType?: string;
+  branch?: string;
+  serviceNumber?: string;
+  department?: string;
+  appointment?: string;
+  /** Estate types only. */
+  houseAddress?: string;
 }
 
 /**
@@ -166,6 +182,8 @@ export interface SubmitVisitorPayload {
   expectedTimeFrom: string;
   expectedTimeTo: string;
   phoneOrLaptop: boolean;
+  /** Optional on both this and the walk-in flow — not institution-type-gated. */
+  plateNumber?: string;
 }
 
 export type WalkInVisitorPayload = Omit<
@@ -176,8 +194,6 @@ export type WalkInVisitorPayload = Omit<
   expectedDate?: string;
   expectedTimeFrom?: string;
   expectedTimeTo?: string;
-  /** Walk-in only — the host's own submission form doesn't accept this yet. */
-  plateNumber?: string;
 };
 
 /**

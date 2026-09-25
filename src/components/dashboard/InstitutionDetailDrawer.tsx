@@ -6,6 +6,7 @@ import { Drawer } from "@/components/ui/Drawer";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/icons/Icon";
 import { Cancel01Icon, MoreHorizontalIcon, Home01Icon } from "@hugeicons/core-free-icons";
+import { INSTITUTION_TYPE_LABEL } from "@/lib/labels";
 import type { Institution } from "@/lib/types";
 
 function Row({ label, value }: { label: string; value?: string }) {
@@ -87,6 +88,7 @@ export function InstitutionDetailDrawer({
           <Row label="Email address" value={institution.email} />
           <Row label="Organization address" value={institution.address} />
           <Row label="Phone number" value={institution.phone} />
+          <Row label="Type" value={institution.type ? INSTITUTION_TYPE_LABEL[institution.type] : "Not set"} />
 
           <Row label="Status" value={institution.status === "active" ? "Active" : "Deactivated"} />
 

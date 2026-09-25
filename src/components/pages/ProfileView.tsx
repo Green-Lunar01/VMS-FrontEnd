@@ -10,11 +10,12 @@ import { PencilEdit02Icon, ViewOffSlashIcon, ViewIcon } from "@hugeicons/core-fr
 import { institutionsApi, usersApi } from "@/lib/api/endpoints";
 import { useApi } from "@/lib/api/useApi";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { useInstitutionBrand } from "@/lib/institution/InstitutionBrandContext";
+import { getOfficerFieldConfig } from "@/lib/institution/officerFields";
 
 const ROLE_DISPLAY: Record<string, string> = {
   institution_admin: "Int",
   security_officer: "Security officer",
-  host: "Resident",
   super_admin: "Super Admin",
 };
 
@@ -93,8 +94,13 @@ export function ProfileView({
 }) {
   const [tab, setTab] = useState("personal");
   const { user, setUser } = useAuth();
+  const brand = useInstitutionBrand();
   const showOrganization = role === "institution_admin";
   const institution = useApi(() => institutionsApi.me(), [], showOrganization);
+  // A Host's "role" is really Personnel/Staff/Resident depending on institution
+  // type — ROLE_DISPLAY can't express that with a fixed lookup.
+  const currentRole = user?.role ?? role;
+  const roleLabel = currentRole === "host" ? getOfficerFieldConfig(brand?.type).personSingular : ROLE_DISPLAY[currentRole];
 
   return (
     <div>
@@ -126,7 +132,7 @@ export function ProfileView({
                 <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
                   <ReadField label="Full name" value={user?.name ?? "—"} />
                   <ReadField label="Email address" value={user?.email ?? "—"} />
-                  <ReadField label="Role" value={ROLE_DISPLAY[user?.role ?? role]} />
+                  <ReadField label="Role" value={roleLabel} />
                 </div>
                 <PasswordBlock href={changePasswordHref} />
               </div>

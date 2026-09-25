@@ -97,6 +97,7 @@ export default function HostDashboardPage() {
         phone: String(form.get("phone") ?? ""),
         country,
         idType,
+        plateNumber: String(form.get("plateNumber") ?? "") || undefined,
         visitorType,
         visitorTypeOther: visitorType === "other" ? String(form.get("visitorTypeOther") ?? "") : undefined,
         escortCount: Number(form.get("escortCount") ?? 0),
@@ -206,6 +207,9 @@ export default function HostDashboardPage() {
               </Field>
               <Field label="ID type">
                 <Dropdown className="h-11 w-full" value={idType} options={ID_TYPE_OPTIONS} onChange={setIdType} />
+              </Field>
+              <Field label="Plate number">
+                <input name="plateNumber" className={inputClass} placeholder="e.g. ABC-123XY" />
               </Field>
               <Field label="Host name">
                 <input name="hostName" className={inputClass} placeholder="Host name" defaultValue={user?.name ?? ""} readOnly />

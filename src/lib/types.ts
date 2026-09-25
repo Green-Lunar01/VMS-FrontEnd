@@ -25,6 +25,15 @@ export type ModeOfEntry = "direct" | "indirect";
 
 export type ServiceType = "army" | "navy" | "air_force";
 
+/**
+ * Drives which officer/resident fields and labels each institution shows —
+ * see src/lib/institution/officerFields.ts. Set once at creation and never
+ * changed after. Institutions created before this field existed come back
+ * with `type` missing entirely, not one of these four values — treat
+ * `undefined` as "not yet set", not a fifth type.
+ */
+export type InstitutionType = "military_office" | "military_estate" | "civilian_office" | "civilian_estate";
+
 export type UserStatus = "active" | "inactive";
 
 export type NotificationType =
@@ -44,6 +53,8 @@ export interface Institution {
   email: string;
   phone: string;
   address: string;
+  /** Missing (not "undefined" the string) on institutions created before this field existed. */
+  type?: InstitutionType;
   logoUrl?: string;
   status: UserStatus;
   createdAt: string;
@@ -64,17 +75,25 @@ export interface User {
   createdAt: string;
 }
 
+/**
+ * Which of these are actually populated depends on the institution's `type` —
+ * see src/lib/institution/officerFields.ts. The API accepts and returns all
+ * of them regardless of type (lenient by design), so treat any of them as
+ * possibly absent rather than assuming a fixed shape.
+ */
 export interface Officer {
   _id: string;
   name: string;
   email: string;
   phone: string;
-  rank: string;
-  serviceType: ServiceType;
-  branch: string;
-  serviceNumber: string;
-  department: string;
-  appointment: string;
+  rank?: string;
+  serviceType?: ServiceType;
+  branch?: string;
+  serviceNumber?: string;
+  department?: string;
+  appointment?: string;
+  /** Estate types only. */
+  houseAddress?: string;
   status: UserStatus;
   photoUrl?: string;
   user: User;

@@ -9,6 +9,7 @@ import { Logout03Icon } from "@hugeicons/core-free-icons";
 import type { NavItem } from "@/lib/nav-config";
 import { InstitutionCrest } from "@/components/layout/InstitutionCrest";
 import { useInstitutionBrand } from "@/lib/institution/InstitutionBrandContext";
+import { getOfficerFieldConfig } from "@/lib/institution/officerFields";
 
 export function Sidebar({
   items,
@@ -20,6 +21,9 @@ export function Sidebar({
   const pathname = usePathname();
   const brand = useInstitutionBrand();
   const institutionName = brand?.name ?? "Institution";
+  // The "Residents" nav item is really "Personnel"/"Staff"/"Residents" depending
+  // on institution type — nav-config.ts can't know that statically.
+  const personPlural = getOfficerFieldConfig(brand?.type).personPlural;
 
   return (
     <aside className="flex h-full w-[235px] shrink-0 flex-col overflow-y-auto border-r border-divider bg-white">
@@ -34,6 +38,7 @@ export function Sidebar({
       <nav className="flex flex-1 flex-col gap-1 py-5">
         {items.map((item) => {
           const active = pathname === item.href || pathname?.startsWith(item.href + "/");
+          const label = item.href.endsWith("/officers") ? personPlural : item.label;
           return (
             <Link
               key={item.href}
@@ -44,7 +49,7 @@ export function Sidebar({
               )}
             >
               <Icon icon={item.icon} size={22} strokeWidth={1.6} />
-              {item.label}
+              {label}
             </Link>
           );
         })}

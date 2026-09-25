@@ -5,6 +5,8 @@ import Image from "next/image";
 import { Modal } from "@/components/ui/Modal";
 import { officersApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
+import { useInstitutionBrand } from "@/lib/institution/InstitutionBrandContext";
+import { getOfficerFieldConfig } from "@/lib/institution/officerFields";
 import type { Officer } from "@/lib/types";
 
 function Row({ label, value }: { label: string; value?: string | number }) {
@@ -31,6 +33,8 @@ export function OfficerCredentialsModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const brand = useInstitutionBrand();
+  const config = getOfficerFieldConfig(brand?.type);
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -77,8 +81,11 @@ export function OfficerCredentialsModal({
         <div className="pl-2">
           <Row label="Username" value={officer?.name} />
           <Row label="Email" value={officer?.email} />
-          <Row label="Rank" value={officer?.rank} />
-          <Row label="Service no." value={officer?.serviceNumber} />
+          {config.rank !== "hidden" && <Row label="Rank" value={officer?.rank} />}
+          {config.serviceNumber !== "hidden" && (
+            <Row label={config.serviceNumberLabel} value={officer?.serviceNumber} />
+          )}
+          {config.houseAddress !== "hidden" && <Row label="House Address" value={officer?.houseAddress} />}
           <Row label="No of visitors received" value={officer?.visitorsReceivedCount} />
         </div>
 

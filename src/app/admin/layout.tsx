@@ -36,7 +36,12 @@ function AdminShell({ children }: { children: ReactNode }) {
     <InstitutionBrandProvider
       value={
         institution
-          ? { name: institution.name, logoUrl: institution.logoUrl, address: institution.address }
+          ? {
+              name: institution.name,
+              logoUrl: institution.logoUrl,
+              address: institution.address,
+              type: institution.type,
+            }
           : null
       }
     >
