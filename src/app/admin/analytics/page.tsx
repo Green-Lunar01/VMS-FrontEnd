@@ -16,7 +16,7 @@ import { useApi } from "@/lib/api/useApi";
 const TABS = [
   { value: "overview", label: "Overview" },
   { value: "admins", label: "Admins" },
-  { value: "officers", label: "Officers/Soldiers" },
+  { value: "officers", label: "Residents" },
 ];
 
 const currentYear = new Date().getFullYear();
@@ -80,7 +80,7 @@ export default function AnalyticsPage() {
               <StatCard
                 icon={PrisonGuardIcon}
                 value={overview.data?.totalOfficers ?? "—"}
-                label="Total Officers/Soldiers"
+                label="Total Residents"
               />
               <StatCard
                 icon={Briefcase01Icon}
@@ -184,7 +184,7 @@ function OfficersPerformance() {
 
   return (
     <div className="rounded-[8px] border border-border px-8 py-7">
-      <h3 className="mb-5 border-b border-divider pb-4 text-xl font-bold text-ink">Officers/Soldiers Performance</h3>
+      <h3 className="mb-5 border-b border-divider pb-4 text-xl font-bold text-ink">Residents Performance</h3>
       {loading ? (
         <p className="py-16 text-center text-sm text-muted">Loading&hellip;</p>
       ) : error ? (

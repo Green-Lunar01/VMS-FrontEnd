@@ -16,7 +16,7 @@ import { exportRowsToCsv } from "@/lib/csv";
 import type { Officer, ServiceType } from "@/lib/types";
 
 /**
- * Officers/Soldiers list. Institution Admins get the "Add new Officer/Soldier"
+ * Residents list. Institution Admins get the "Add new Officer/Soldier"
  * popup and credential sharing; Security Officers get the read-only list.
  */
 export function OfficersView({ canManage = true }: { canManage?: boolean }) {
@@ -64,7 +64,7 @@ export function OfficersView({ canManage = true }: { canManage?: boolean }) {
 
   return (
     <div>
-      <PageTitle>Officers/Soldiers</PageTitle>
+      <PageTitle>Residents</PageTitle>
 
       <PageCard>
         <Toolbar>
@@ -106,7 +106,7 @@ export function OfficersView({ canManage = true }: { canManage?: boolean }) {
         </Toolbar>
 
         <div className="flex items-center justify-between px-7 pb-2 pt-5">
-          <p className="text-sm text-ink">Total Officers/Soldiers: {rows.length}</p>
+          <p className="text-sm text-ink">Total Residents: {rows.length}</p>
           {error && (
             <button onClick={reload} className="text-sm text-red hover:underline">
               {error} &mdash; retry

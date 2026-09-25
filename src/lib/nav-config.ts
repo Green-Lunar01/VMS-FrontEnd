@@ -22,7 +22,7 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
   institution_admin: [
     { label: "Home", href: "/admin/home", icon: Home09Icon },
     { label: "Visitors Log", href: "/admin/visitors", icon: UserGroup03Icon },
-    { label: "Officers/Soldiers", href: "/admin/officers", icon: PrisonGuardIcon },
+    { label: "Residents", href: "/admin/officers", icon: PrisonGuardIcon },
     { label: "Contractors", href: "/admin/contractors", icon: Briefcase01Icon },
     { label: "Dispatcher", href: "/admin/dispatcher", icon: Motorbike01Icon },
     { label: "Analytics", href: "/admin/analytics", icon: Analytics01Icon },
@@ -31,7 +31,7 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
   security_officer: [
     { label: "Home", href: "/security/home", icon: Home09Icon },
     { label: "Visitors Log", href: "/security/visitors", icon: UserGroup03Icon },
-    { label: "Officers/Soldiers", href: "/security/officers", icon: PrisonGuardIcon },
+    { label: "Residents", href: "/security/officers", icon: PrisonGuardIcon },
     { label: "Contractors", href: "/security/contractors", icon: Briefcase01Icon },
     { label: "Dispatcher", href: "/security/dispatcher", icon: Motorbike01Icon },
   ],

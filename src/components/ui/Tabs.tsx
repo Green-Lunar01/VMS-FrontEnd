@@ -10,7 +10,7 @@ export interface TabItem {
 
 /**
  * Text tabs with a green active label — used on Analytics ("Overview / Admins /
- * Officers/Soldiers") and Profile ("Personal / Organization").
+ * Residents") and Profile ("Personal / Organization").
  */
 export function TextTabs({
   items,
