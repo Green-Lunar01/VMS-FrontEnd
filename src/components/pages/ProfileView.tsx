@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/auth/AuthProvider";
 const ROLE_DISPLAY: Record<string, string> = {
   institution_admin: "Int",
   security_officer: "Security officer",
-  host: "Officer/Soldier",
+  host: "Resident",
   super_admin: "Super Admin",
 };
 

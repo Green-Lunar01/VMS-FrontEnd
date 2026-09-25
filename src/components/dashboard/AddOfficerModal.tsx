@@ -37,7 +37,7 @@ const inputClass =
   "h-11 w-full rounded-[4px] border border-border bg-white px-3.5 text-sm text-ink outline-none transition-colors placeholder:text-border focus:border-primary";
 
 /**
- * "Add new Officer/Soldier" popup. No password field — the API generates a
+ * "Add new Resident" popup. No password field — the API generates a
  * temporary one and emails it, with mustChangePassword set.
  */
 export function AddOfficerModal({
@@ -81,7 +81,7 @@ export function AddOfficerModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Add new Officer/Soldier">
+    <Modal open={open} onClose={onClose} title="Add new Resident">
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-12 py-7">
         <Field label="Service type">
           <Dropdown className="h-11 w-full" value={serviceType} options={SERVICE_OPTIONS} onChange={setServiceType} />

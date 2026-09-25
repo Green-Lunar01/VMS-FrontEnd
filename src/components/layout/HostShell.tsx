@@ -15,7 +15,7 @@ import { NotificationsDrawer } from "@/components/dashboard/NotificationsDrawer"
 import { useAuth } from "@/lib/auth/AuthProvider";
 
 /**
- * Officer/Soldier (host) shell: crest sidebar with a single "Visitor" entry, and a
+ * Resident (host) shell: crest sidebar with a single "Visitor" entry, and a
  * bare topbar with call, notifications and the account avatar.
  */
 export function HostShell({

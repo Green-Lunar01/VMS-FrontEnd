@@ -16,7 +16,7 @@ import { exportRowsToCsv } from "@/lib/csv";
 import type { Officer, ServiceType } from "@/lib/types";
 
 /**
- * Residents list. Institution Admins get the "Add new Officer/Soldier"
+ * Residents list. Institution Admins get the "Add new Resident"
  * popup and credential sharing; Security Officers get the read-only list.
  */
 export function OfficersView({ canManage = true }: { canManage?: boolean }) {
@@ -70,11 +70,11 @@ export function OfficersView({ canManage = true }: { canManage?: boolean }) {
         <Toolbar>
           {canManage && (
             <Button className="shrink-0 px-5" variant="outline" onClick={() => setAddOpen(true)}>
-              Add new Officer/Soldier
+              Add new Resident
             </Button>
           )}
           <Button className="shrink-0 px-5" onClick={reload}>
-            Officer/Soldier List
+            Resident List
           </Button>
           <SearchField
             className="w-[170px] shrink-0"

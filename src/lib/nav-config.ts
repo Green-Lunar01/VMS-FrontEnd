@@ -48,6 +48,6 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
 export const ROLE_LABEL: Record<Role, string> = {
   institution_admin: "Institution Admin",
   security_officer: "Security Officer",
-  host: "Officer/Soldier",
+  host: "Resident",
   super_admin: "Super Admin",
 };
