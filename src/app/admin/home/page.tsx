@@ -3,5 +3,5 @@
 import { HomeBoard } from "@/components/dashboard/HomeBoard";
 
 export default function AdminHomePage() {
-  return <HomeBoard />;
+  return <HomeBoard dispatcherPosition="end" />;
 }

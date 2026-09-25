@@ -12,6 +12,7 @@ import { visitorsApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useApi } from "@/lib/api/useApi";
 import { ApproveVisitorModal } from "@/components/dashboard/ApproveVisitorModal";
+import { cn } from "@/lib/utils";
 import type { ModeOfEntry, Visitor } from "@/lib/types";
 
 function QueueSearch({ withDate }: { withDate?: boolean }) {
@@ -93,11 +94,14 @@ export function HomeBoard({
   board = "default",
   canOnboardWalkIn = false,
   canApprove = false,
+  dispatcherPosition = "start",
 }: {
   board?: "default" | "signed";
   /** Security Officers can register a walk-in; the panel is theirs alone. */
   canOnboardWalkIn?: boolean;
   canApprove?: boolean;
+  /** Institution Admin wants the onboarding panel after the visitor queues, not before. */
+  dispatcherPosition?: "start" | "end";
 }) {
   const [view, setView] = useState<"default" | "signed">(board);
   const [panel, setPanel] = useState<"dispatch" | "walkin">("dispatch");
@@ -130,108 +134,129 @@ export function HomeBoard({
     }
   }
 
+  const dispatcherPanel = (
+    <div className="flex flex-col">
+      <QueueHeader
+        title={panel === "dispatch" ? "Onboard New Dispatcher" : "Onboard New Visitors"}
+        tone="indigo"
+        className="mb-4"
+      />
+      {canOnboardWalkIn && (
+        <div className="mb-3 flex gap-2">
+          <button
+            onClick={() => setPanel("dispatch")}
+            className={`flex-1 rounded-[6px] px-3 py-2 text-xs font-semibold transition-colors ${
+              panel === "dispatch" ? "bg-primary text-white" : "bg-grey text-muted hover:text-ink"
+            }`}
+          >
+            Dispatcher
+          </button>
+          <button
+            onClick={() => setPanel("walkin")}
+            className={`flex-1 rounded-[6px] px-3 py-2 text-xs font-semibold transition-colors ${
+              panel === "walkin" ? "bg-primary text-white" : "bg-grey text-muted hover:text-ink"
+            }`}
+          >
+            Visitor
+          </button>
+        </div>
+      )}
+      <div className="relative flex-1 rounded-[10px] bg-grey/60 p-3">
+        <div className="relative rounded-[10px] bg-white px-6 py-6">
+          {panel === "walkin" && canOnboardWalkIn ? <WalkInForm onCreated={reload} /> : <DispatchForm />}
+        </div>
+      </div>
+    </div>
+  );
+
+  const queueArea = (
+    <div className="relative rounded-[10px] bg-white/40 px-11 py-1">
+      <button
+        onClick={() => setView("default")}
+        className="absolute left-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-md transition-opacity hover:opacity-80"
+        aria-label="Previous"
+      >
+        <Icon icon={ArrowLeft01Icon} size={20} strokeWidth={2} />
+      </button>
+      <button
+        onClick={() => setView("signed")}
+        className="absolute right-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-md transition-opacity hover:opacity-80"
+        aria-label="Next"
+      >
+        <Icon icon={ArrowRight01Icon} size={20} strokeWidth={2} />
+      </button>
+
+      <div className="grid grid-cols-1 gap-6 py-2 md:grid-cols-2">
+        {view === "default" ? (
+          <>
+            <QueueColumn
+              title="Submitted Visitors"
+              tone="teal"
+              count={submitted.length}
+              visitors={submitted}
+              variant="submitted"
+              loading={loading}
+              onAction={canApprove ? (v) => setApproving(v) : undefined}
+            />
+            <QueueColumn
+              title="Cancelled Visitors"
+              tone="ink"
+              count={cancelled.length}
+              visitors={cancelled}
+              variant="cancelled"
+              loading={loading}
+            />
+          </>
+        ) : (
+          <>
+            <QueueColumn
+              title="Signed In Visitors"
+              tone="green"
+              count={signedIn.length}
+              visitors={signedIn}
+              variant="signed_in"
+              withDate
+              loading={loading}
+              onAction={canApprove ? handleSignOut : undefined}
+            />
+            <QueueColumn
+              title="Signed Out Visitors"
+              tone="red"
+              count={signedOut.length}
+              visitors={signedOut}
+              variant="signed_out"
+              withDate
+              loading={loading}
+            />
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[352px_1fr]">
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-6",
+        dispatcherPosition === "end" ? "xl:grid-cols-[1fr_352px]" : "xl:grid-cols-[352px_1fr]",
+      )}
+    >
       {error && (
         <button onClick={reload} className="col-span-full rounded-[6px] bg-red-light px-4 py-3 text-sm text-red">
           {error} &mdash; retry
         </button>
       )}
-      <div className="flex flex-col">
-        <QueueHeader
-          title={panel === "dispatch" ? "Onboard New Dispatcher" : "Onboard New Visitors"}
-          tone="indigo"
-          className="mb-4"
-        />
-        {canOnboardWalkIn && (
-          <div className="mb-3 flex gap-2">
-            <button
-              onClick={() => setPanel("dispatch")}
-              className={`flex-1 rounded-[6px] px-3 py-2 text-xs font-semibold transition-colors ${
-                panel === "dispatch" ? "bg-primary text-white" : "bg-grey text-muted hover:text-ink"
-              }`}
-            >
-              Dispatcher
-            </button>
-            <button
-              onClick={() => setPanel("walkin")}
-              className={`flex-1 rounded-[6px] px-3 py-2 text-xs font-semibold transition-colors ${
-                panel === "walkin" ? "bg-primary text-white" : "bg-grey text-muted hover:text-ink"
-              }`}
-            >
-              Visitor
-            </button>
-          </div>
-        )}
-        <div className="relative flex-1 rounded-[10px] bg-grey/60 p-3">
-          <div className="relative rounded-[10px] bg-white px-6 py-6">
-            {panel === "walkin" && canOnboardWalkIn ? <WalkInForm onCreated={reload} /> : <DispatchForm />}
-          </div>
-        </div>
-      </div>
-
-      <div className="relative rounded-[10px] bg-white/40 px-11 py-1">
-        <button
-          onClick={() => setView("default")}
-          className="absolute left-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-md transition-opacity hover:opacity-80"
-          aria-label="Previous"
-        >
-          <Icon icon={ArrowLeft01Icon} size={20} strokeWidth={2} />
-        </button>
-        <button
-          onClick={() => setView("signed")}
-          className="absolute right-1 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-ink shadow-md transition-opacity hover:opacity-80"
-          aria-label="Next"
-        >
-          <Icon icon={ArrowRight01Icon} size={20} strokeWidth={2} />
-        </button>
-
-        <div className="grid grid-cols-1 gap-6 py-2 md:grid-cols-2">
-          {view === "default" ? (
-            <>
-              <QueueColumn
-                title="Submitted Visitors"
-                tone="teal"
-                count={submitted.length}
-                visitors={submitted}
-                variant="submitted"
-                loading={loading}
-                onAction={canApprove ? (v) => setApproving(v) : undefined}
-              />
-              <QueueColumn
-                title="Cancelled Visitors"
-                tone="ink"
-                count={cancelled.length}
-                visitors={cancelled}
-                variant="cancelled"
-                loading={loading}
-              />
-            </>
-          ) : (
-            <>
-              <QueueColumn
-                title="Signed In Visitors"
-                tone="green"
-                count={signedIn.length}
-                visitors={signedIn}
-                variant="signed_in"
-                withDate
-                loading={loading}
-                onAction={canApprove ? handleSignOut : undefined}
-              />
-              <QueueColumn
-                title="Signed Out Visitors"
-                tone="red"
-                count={signedOut.length}
-                visitors={signedOut}
-                variant="signed_out"
-                withDate
-                loading={loading}
-              />
-            </>
-          )}
-        </div>
-      </div>
+      {dispatcherPosition === "end" ? (
+        <>
+          {queueArea}
+          {dispatcherPanel}
+        </>
+      ) : (
+        <>
+          {dispatcherPanel}
+          {queueArea}
+        </>
+      )}
 
       <ApproveVisitorModal
         visitor={approving}
