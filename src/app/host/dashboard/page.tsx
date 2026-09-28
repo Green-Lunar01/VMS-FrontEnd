@@ -51,6 +51,8 @@ export default function HostDashboardPage() {
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [lastCode, setLastCode] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [country, setCountry] = useState("Nigeria");
@@ -92,7 +94,7 @@ export default function HostDashboardPage() {
     setBusy(true);
     setFormError(null);
     try {
-      await visitorsApi.submit({
+      const created = await visitorsApi.submit({
         name: String(form.get("name") ?? ""),
         phone: String(form.get("phone") ?? ""),
         country,
@@ -110,6 +112,8 @@ export default function HostDashboardPage() {
       // e.currentTarget is nulled by the time the await above resolves, so the
       // element reference has to be captured beforehand.
       formEl.reset();
+      setLastCode(created.visitationCode ?? null);
+      setCodeCopied(false);
       setConfirmOpen(true);
       reload();
     } catch (err) {
@@ -330,6 +334,32 @@ export default function HostDashboardPage() {
               Security has been notified and will sign your visitor in on arrival.
             </p>
           </div>
+          {lastCode && (
+            <div className="w-full rounded-[6px] border border-dashed border-primary bg-primary-light px-4 py-3">
+              <p className="text-xs text-muted">
+                Visitation code — share it with your visitor so Security can find them at the
+                gate without searching the log. Not required; they can still be found the usual way.
+              </p>
+              <div className="mt-2 flex items-center justify-center gap-3">
+                <p className="text-xl font-bold tracking-[0.2em] text-primary">{lastCode}</p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(lastCode);
+                      setCodeCopied(true);
+                      window.setTimeout(() => setCodeCopied(false), 2000);
+                    } catch {
+                      /* clipboard access denied — the code is still visible to copy by hand */
+                    }
+                  }}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  {codeCopied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+          )}
           <Button fullWidth onClick={() => setConfirmOpen(false)}>
             Done
           </Button>
@@ -416,6 +446,7 @@ function VisitorDetail({
       </div>
 
       <div className="mx-auto max-w-[440px]">
+        <DetailRow label="Visitation code" value={visitor.visitationCode} />
         <DetailRow label="Host name" value={visitor.host.name} />
         <DetailRow label="Phone number" value={visitor.phone} />
         <DetailRow label="Host rank" value={visitor.host.rank} />

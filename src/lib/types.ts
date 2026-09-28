@@ -122,6 +122,14 @@ export interface Visitor {
   escortNames: string[];
   /** Only ever set on a walk-in — the host's own submission form doesn't collect it. */
   plateNumber?: string;
+  /**
+   * Only ever set on a Host's own submission (POST /visitors), never on a
+   * walk-in — a 6-char code (letters+digits, no ambiguous 0/O/1/I/L) Security
+   * can look up at the gate via GET /visitors/by-code/:code instead of
+   * finding the visitor in the log. No separate expiry: it just stops being
+   * usable once the visitor is signed in, signed out, or cancelled.
+   */
+  visitationCode?: string;
   /** Walk-ins have none of these three — they arrived without a prior appointment. */
   expectedDate?: string;
   expectedTimeFrom?: string;

@@ -79,6 +79,7 @@ export function VisitorQueueCard({
 
       <div>
         <Row label="Status" value={VISITOR_STATUS_LABEL[visitor.status]} />
+        <Row label="Visitation code" value={visitor.visitationCode} />
         <Row label="Host name" value={visitor.host.name} />
         <Row label="Phone number" value={visitor.phone} />
         <Row label="Host rank" value={visitor.host.rank} />

@@ -259,6 +259,13 @@ export const visitorsApi = {
   mine: (filters?: Omit<VisitorFilters, "hostId">) =>
     api.get<Visitor[]>("/visitors/mine", { query: filters }).then(enrichVisitors),
   today: () => api.get<Visitor[]>("/visitors/today").then(enrichVisitors),
+  /**
+   * Security Officer, gate-desk lookup of a Host-submitted visitor by their
+   * visitationCode — read-only, does not sign anyone in. 404s (not 403) for a
+   * code from another institution or one that doesn't exist; both look
+   * identical on purpose, so don't try to tell them apart in the UI.
+   */
+  getByCode: (code: string) => api.get<Visitor>(`/visitors/by-code/${encodeURIComponent(code)}`).then(enrichVisitor),
   get: (id: string) => api.get<Visitor>(`/visitors/${id}`).then(enrichVisitor),
 };
 

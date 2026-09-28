@@ -101,6 +101,7 @@ export function VisitorDetailDrawer({
           </div>
 
           <div>
+            <Row label="Visitation code" value={visitor.visitationCode} />
             <Row label="Host name" value={visitor.host.name} />
             <Row label="Phone number" value={visitor.phone} />
             <Row label="Host Rank" value={visitor.host.rank} />

@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Icon } from "@/components/icons/Icon";
 import { ArrowLeft01Icon, ArrowRight01Icon, Search01Icon, Calendar03Icon } from "@hugeicons/core-free-icons";
 import { WalkInForm } from "@/components/dashboard/WalkInForm";
+import { VisitorCodeLookup } from "@/components/dashboard/VisitorCodeLookup";
 import { visitorsApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useApi } from "@/lib/api/useApi";
@@ -104,7 +105,7 @@ export function HomeBoard({
   dispatcherPosition?: "start" | "end";
 }) {
   const [view, setView] = useState<"default" | "signed">(board);
-  const [panel, setPanel] = useState<"dispatch" | "walkin">("dispatch");
+  const [panel, setPanel] = useState<"dispatch" | "walkin" | "lookup">("dispatch");
   const [approving, setApproving] = useState<Visitor | null>(null);
 
   const { data, loading, error, reload, setData } = useApi<Visitor[]>(() => visitorsApi.today(), []);
@@ -124,6 +125,10 @@ export function HomeBoard({
   async function handleApprove(guestTagNumber: string, modeOfEntry: ModeOfEntry) {
     if (!approving) return;
     patchRow(await visitorsApi.approve(approving._id, guestTagNumber, modeOfEntry));
+    // A visitor found via the code lookup below may not be in today's list at
+    // all (e.g. expected on a different day) — patchRow alone would silently
+    // no-op for them, so also refetch to be sure the queues stay correct.
+    reload();
   }
 
   async function handleSignOut(visitor: Visitor) {
@@ -134,13 +139,12 @@ export function HomeBoard({
     }
   }
 
+  const panelTitle =
+    panel === "dispatch" ? "Onboard New Dispatcher" : panel === "walkin" ? "Onboard New Visitors" : "Find Visitor by Code";
+
   const dispatcherPanel = (
     <div className="flex flex-col">
-      <QueueHeader
-        title={panel === "dispatch" ? "Onboard New Dispatcher" : "Onboard New Visitors"}
-        tone="indigo"
-        className="mb-4"
-      />
+      <QueueHeader title={panelTitle} tone="indigo" className="mb-4" />
       {canOnboardWalkIn && (
         <div className="mb-3 flex gap-2">
           <button
@@ -159,11 +163,25 @@ export function HomeBoard({
           >
             Visitor
           </button>
+          <button
+            onClick={() => setPanel("lookup")}
+            className={`flex-1 rounded-[6px] px-3 py-2 text-xs font-semibold transition-colors ${
+              panel === "lookup" ? "bg-primary text-white" : "bg-grey text-muted hover:text-ink"
+            }`}
+          >
+            Code
+          </button>
         </div>
       )}
       <div className="relative flex-1 rounded-[10px] bg-grey/60 p-3">
         <div className="relative rounded-[10px] bg-white px-6 py-6">
-          {panel === "walkin" && canOnboardWalkIn ? <WalkInForm onCreated={reload} /> : <DispatchForm />}
+          {panel === "walkin" && canOnboardWalkIn ? (
+            <WalkInForm onCreated={reload} />
+          ) : panel === "lookup" && canOnboardWalkIn ? (
+            <VisitorCodeLookup onSignIn={setApproving} />
+          ) : (
+            <DispatchForm />
+          )}
         </div>
       </div>
     </div>
