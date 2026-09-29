@@ -15,6 +15,8 @@ import { ApiError } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { ID_TYPE_LABEL, ID_TYPE_OPTIONS, VISITOR_STATUS_LABEL, VISITOR_TYPE_FORM_OPTIONS } from "@/lib/labels";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
+import { useInstitutionBrand } from "@/lib/institution/InstitutionBrandContext";
+import { getOfficerFieldConfig } from "@/lib/institution/officerFields";
 import { agentName, cn, formatDate, timeRange, visitorTypeLabel } from "@/lib/utils";
 import type { Visitor, VisitorStatus } from "@/lib/types";
 
@@ -45,6 +47,8 @@ const STATUS_DOT: Record<VisitorStatus, string> = {
 
 export default function HostDashboardPage() {
   const { user } = useAuth();
+  const brand = useInstitutionBrand();
+  const officerFields = getOfficerFieldConfig(brand?.type);
   const [tab, setTab] = useState<VisitorStatus | "all">("all");
   const [mode, setMode] = useState<"form" | "list">("form");
   const [selected, setSelected] = useState<Visitor | null>(null);
@@ -218,12 +222,16 @@ export default function HostDashboardPage() {
               <Field label="Host name">
                 <input name="hostName" className={inputClass} placeholder="Host name" defaultValue={user?.name ?? ""} readOnly />
               </Field>
-              <Field label="Host rank">
-                <Dropdown className="h-11 w-full" value={hostRank} options={RANKS} onChange={setHostRank} />
-              </Field>
-              <Field label="Host department">
-                <input name="hostDepartment" className={inputClass} placeholder="Host Department" />
-              </Field>
+              {officerFields.rank !== "hidden" && (
+                <Field label="Host rank">
+                  <Dropdown className="h-11 w-full" value={hostRank} options={RANKS} onChange={setHostRank} />
+                </Field>
+              )}
+              {officerFields.department !== "hidden" && (
+                <Field label="Host department">
+                  <input name="hostDepartment" className={inputClass} placeholder="Host Department" />
+                </Field>
+              )}
               <Field label="Type of visitor">
                 <Dropdown
                   className="h-11 w-full"
