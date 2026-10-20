@@ -73,15 +73,15 @@ export default function LoginPage() {
           would leak it onto the forced password-change screen too). */}
       <div className="mt-6 w-full rounded-[6px] border border-dashed border-primary bg-primary-light px-4 py-3 text-center">
         <p className="text-xs text-muted">
-          Run change-of-name, lost-document, or trustee registration notices?
+          Run change-of-name, lost-document, or trustee registration notices? Partner with us.
         </p>
         <a
-          href="https://www.advertnaija.com/partners/register"
+          href="https://www.advertnaija.com"
           target="_blank"
           rel="noopener noreferrer"
           className="mt-1 inline-block text-sm font-semibold text-primary hover:underline"
         >
-          Onboard as a partner on AdvertNaija →
+          Visit AdvertNaija →
         </a>
       </div>
     </AuthLayout>
