@@ -66,6 +66,24 @@ export default function LoginPage() {
           {loading ? "Logging in…" : "Login"}
         </Button>
       </form>
+
+      {/* Cross-promotion for AdvertNaija (change-of-name, lost-document, trustee
+          notices) — login is the one screen every visitor lands on before auth,
+          so it's the natural spot for this, not the shared AuthLayout (that
+          would leak it onto the forced password-change screen too). */}
+      <div className="mt-6 w-full rounded-[6px] border border-dashed border-primary bg-primary-light px-4 py-3 text-center">
+        <p className="text-xs text-muted">
+          Run change-of-name, lost-document, or trustee registration notices?
+        </p>
+        <a
+          href="https://www.advertnaija.com/partners/register"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-block text-sm font-semibold text-primary hover:underline"
+        >
+          Onboard as a partner on AdvertNaija →
+        </a>
+      </div>
     </AuthLayout>
   );
 }
