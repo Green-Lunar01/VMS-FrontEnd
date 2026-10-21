@@ -76,7 +76,7 @@ export default function LoginPage() {
           Run change-of-name, lost-document, or trustee registration notices? Partner with us.
         </p>
         <a
-          href="https://www.advertnaija.com"
+          href="https://www.advertnaija.com/?ref=KEBVDL32EE"
           target="_blank"
           rel="noopener noreferrer"
           className="mt-1 inline-block text-sm font-semibold text-primary hover:underline"
