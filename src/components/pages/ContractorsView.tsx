@@ -10,14 +10,19 @@ import { Modal } from "@/components/ui/Modal";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PermitFront, PermitBack } from "@/components/dashboard/ContractorPermit";
-import { Icon } from "@/components/icons/Icon";
-import { Camera01Icon } from "@hugeicons/core-free-icons";
 import { contractorsApi } from "@/lib/api/endpoints";
 import { ApiError } from "@/lib/api/client";
 import { useApi } from "@/lib/api/useApi";
-import { useInstitutionBrand } from "@/lib/institution/InstitutionBrandContext";
 import { formatDate, formatDateTime } from "@/lib/utils";
-import type { Contractor, ContractorVisit } from "@/lib/types";
+import type { Contractor, ContractorStatus, ContractorVisit } from "@/lib/types";
+
+const CONTRACTOR_STATUS_LABEL: Record<ContractorStatus, string> = {
+  invited: "Invited",
+  pending_review: "Pending review",
+  rejected: "Rejected",
+  active: "Active",
+  inactive: "Revoked",
+};
 
 const ALL_TABS = [
   { value: "add", label: "Add new contractor" },
@@ -53,11 +58,15 @@ export function ContractorsView({ canManage = true }: { canManage?: boolean }) {
 }
 
 function AddContractorTab() {
-  const brand = useInstitutionBrand();
-  const institutionName = brand?.name ?? "Institution";
-  const [created, setCreated] = useState<Contractor | null>(null);
+  const [invited, setInvited] = useState<Contractor | null>(null);
+  const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const registrationLink =
+    invited?.registrationToken && typeof window !== "undefined"
+      ? `${window.location.origin}/contractor-registration/${invited.registrationToken}`
+      : null;
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -66,20 +75,18 @@ function AddContractorTab() {
     setBusy(true);
     setError(null);
     try {
-      const contractor = await contractorsApi.create({
-        name: String(form.get("name") ?? ""),
-        companyName: String(form.get("companyName") ?? ""),
+      const contractor = await contractorsApi.invite({
         email: String(form.get("email") ?? ""),
-        phone: String(form.get("phone") ?? ""),
         validityFrom: String(form.get("from") ?? ""),
         validityTo: String(form.get("to") ?? ""),
       });
-      setCreated(contractor);
+      setInvited(contractor);
+      setCopied(false);
       // e.currentTarget is nulled by the time the await above resolves, so the
       // element reference has to be captured beforehand.
       formEl.reset();
     } catch (err) {
-      setError(err instanceof ApiError ? err.messages.join(" ") : "Could not add this contractor.");
+      setError(err instanceof ApiError ? err.messages.join(" ") : "Could not invite this contractor.");
     } finally {
       setBusy(false);
     }
@@ -87,67 +94,34 @@ function AddContractorTab() {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="grid grid-cols-1 gap-9 lg:grid-cols-2">
+      {/*
+        The old single-step form (name/company/photo) is gone — the backend now
+        has the contractor fill those in themselves on a public registration
+        link. An Admin only provides the email + validity window to invite them.
+      */}
+      <div className="mx-auto max-w-[480px]">
         <div className="overflow-hidden rounded-[10px] border border-border">
-          <div className="border-b border-border py-4 text-center text-base font-bold text-ink">Add new Contractor</div>
-          <div className="px-8 py-7">
-            <div className="flex items-center gap-3 pb-6">
-              {brand?.logoUrl && <Image src={brand.logoUrl} alt="" width={52} height={52} />}
-              <div>
-                <p className="font-display text-[22px] leading-tight text-primary">{institutionName.toUpperCase()}</p>
-                <p className="text-center text-base font-bold tracking-wide text-ink">CONTRACTOR PERMIT</p>
-              </div>
-            </div>
-
-            <div className="flex justify-center pb-6">
-              <div className="relative">
-                <Image
-                  src="/branding/avatar-placeholder.png"
-                  alt=""
-                  width={110}
-                  height={110}
-                  className="h-[110px] w-[110px] rounded-full object-cover"
-                />
-                <span className="absolute bottom-1 right-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink shadow">
-                  <Icon icon={Camera01Icon} size={17} />
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-ink">Name</label>
-                <input name="name" className={inputClass} placeholder="Name" required />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-ink">Company name</label>
-                <input name="companyName" className={inputClass} placeholder="Company" required />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-ink">Validity period</label>
-                <div className="flex items-stretch overflow-hidden rounded-[4px] border border-border">
-                  <span className="flex items-center bg-grey px-3 text-sm font-semibold text-ink">From</span>
-                  <input name="from" type="date" className="h-11 min-w-0 flex-1 px-3 text-sm text-ink outline-none" required />
-                  <span className="flex items-center bg-grey px-3 text-sm font-semibold text-ink">To</span>
-                  <input name="to" type="date" className="h-11 min-w-0 flex-1 px-3 text-sm text-ink outline-none" required />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-ink">Email address</label>
-                <input name="email" className={inputClass} placeholder="Email" type="email" required />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-semibold text-ink">Phone number</label>
-                <input name="phone" className={inputClass} placeholder="090873636366" required />
-              </div>
-            </div>
+          <div className="border-b border-border py-4 text-center text-base font-bold text-ink">
+            Invite a new contractor
           </div>
-        </div>
-
-        <div className="overflow-hidden rounded-[10px] border border-border">
-          <div className="border-b border-border py-4 text-center text-base font-bold text-ink">Card Back</div>
-          <div className="p-6">
-            <PermitBack className="border-0" />
+          <div className="flex flex-col gap-4 px-8 py-7">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-ink">Email address</label>
+              <input name="email" className={inputClass} placeholder="Email" type="email" required />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-ink">Validity period</label>
+              <div className="flex items-stretch overflow-hidden rounded-[4px] border border-border">
+                <span className="flex items-center bg-grey px-3 text-sm font-semibold text-ink">From</span>
+                <input name="from" type="date" className="h-11 min-w-0 flex-1 px-3 text-sm text-ink outline-none" required />
+                <span className="flex items-center bg-grey px-3 text-sm font-semibold text-ink">To</span>
+                <input name="to" type="date" className="h-11 min-w-0 flex-1 px-3 text-sm text-ink outline-none" required />
+              </div>
+            </div>
+            <p className="text-xs text-muted">
+              We&rsquo;ll email them a registration link where they fill in their company details, pay the
+              registration fee, and upload the required documents.
+            </p>
           </div>
         </div>
       </div>
@@ -160,21 +134,33 @@ function AddContractorTab() {
 
       <div className="mt-8 flex justify-center">
         <Button type="submit" className="h-[52px] w-[390px]" disabled={busy}>
-          {busy ? "Adding…" : "Add contractor"}
+          {busy ? "Inviting…" : "Send invite"}
         </Button>
       </div>
 
-      <Modal open={!!created} onClose={() => setCreated(null)} hideHeader className="w-[1100px] max-w-[94vw]">
-        <div className="px-8 py-10">
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            <PermitFront contractor={created ?? undefined} />
-            <PermitBack />
-          </div>
-          <div className="mt-6 text-center">
-            <button onClick={() => window.print()} className="text-sm font-semibold text-primary hover:underline">
-              Print ID
-            </button>
-          </div>
+      <Modal open={!!invited} onClose={() => setInvited(null)} title="Invitation sent">
+        <div className="px-7 py-6">
+          <p className="text-sm text-ink">
+            An invite has been emailed to <span className="font-semibold">{invited?.email}</span>. If they need the
+            link directly, you can copy it below.
+          </p>
+          {registrationLink && (
+            <div className="mt-4 flex items-center gap-2 rounded-[4px] border border-dashed border-primary bg-primary-light px-3 py-2.5">
+              <span className="min-w-0 flex-1 truncate text-xs text-ink">{registrationLink}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard?.writeText(registrationLink).then(() => setCopied(true));
+                }}
+                className="shrink-0 text-xs font-semibold text-primary hover:underline"
+              >
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+          )}
+          <Button fullWidth className="mt-6" onClick={() => setInvited(null)}>
+            Done
+          </Button>
         </div>
       </Modal>
     </form>
@@ -184,6 +170,7 @@ function AddContractorTab() {
 function ContractorListTab({ canManage }: { canManage: boolean }) {
   const { data, loading, error, reload, setData } = useApi<Contractor[]>(() => contractorsApi.list(), []);
   const rows = data ?? [];
+  const [viewingPermit, setViewingPermit] = useState<Contractor | null>(null);
 
   async function revoke(contractor: Contractor) {
     const reason = window.prompt(`Why is ${contractor.name}'s access being revoked?`);
@@ -197,33 +184,58 @@ function ContractorListTab({ canManage }: { canManage: boolean }) {
   }
 
   const columns: Column<Contractor>[] = [
-    { key: "name", header: "Name", render: (c) => c.name },
-    { key: "companyName", header: "Company", render: (c) => c.companyName },
-    { key: "idNumber", header: "ID number", render: (c) => c.idNumber },
-    { key: "phone", header: "Phone", render: (c) => c.phone },
+    { key: "name", header: "Name", render: (c) => c.name ?? "—" },
+    { key: "companyName", header: "Company", render: (c) => c.companyName ?? "—" },
+    { key: "idNumber", header: "ID number", render: (c) => c.idNumber ?? "—" },
+    { key: "phone", header: "Phone", render: (c) => c.phone ?? "—" },
     { key: "email", header: "Email address", render: (c) => c.email },
+    {
+      key: "status",
+      header: "Status",
+      render: (c) => CONTRACTOR_STATUS_LABEL[c.status],
+    },
     { key: "validityTo", header: "Expiring date", render: (c) => formatDate(c.validityTo) },
-  ];
-
-  if (canManage) {
-    columns.push({
+    {
       key: "action",
       header: "",
-      width: "110px",
-      render: (c) =>
-        c.status === "active" ? (
-          <button onClick={() => revoke(c)} className="text-sm text-red hover:underline">
-            Revoke
-          </button>
-        ) : (
-          <span className="text-sm text-muted">Revoked</span>
-        ),
-    });
-  }
+      width: canManage ? "180px" : "100px",
+      render: (c) => (
+        <div className="flex items-center gap-3">
+          {c.status === "active" && (
+            <button onClick={() => setViewingPermit(c)} className="text-sm text-primary hover:underline">
+              View permit
+            </button>
+          )}
+          {canManage && c.status === "active" && (
+            <button onClick={() => revoke(c)} className="text-sm text-red hover:underline">
+              Revoke
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   if (loading) return <p className="py-16 text-center text-sm text-muted">Loading contractors&hellip;</p>;
   if (error) return <p className="py-16 text-center text-sm text-red">{error}</p>;
-  return <DataTable columns={columns} rows={rows} />;
+  return (
+    <>
+      <DataTable columns={columns} rows={rows} />
+      <Modal open={!!viewingPermit} onClose={() => setViewingPermit(null)} hideHeader className="w-[1100px] max-w-[94vw]">
+        <div className="px-8 py-10">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            <PermitFront contractor={viewingPermit ?? undefined} />
+            <PermitBack />
+          </div>
+          <div className="mt-6 text-center">
+            <button onClick={() => window.print()} className="text-sm font-semibold text-primary hover:underline">
+              Print ID
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </>
+  );
 }
 
 function CheckInTab({ canCheckIn }: { canCheckIn: boolean }) {

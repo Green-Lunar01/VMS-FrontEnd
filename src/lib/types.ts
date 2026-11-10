@@ -1,7 +1,7 @@
 // Types mirror the DHQ-VMS backend DTOs described in FRONTEND_INTEGRATION_GUIDE.md
 // so that swapping mock data for real API responses later is a drop-in change.
 
-export type Role = "super_admin" | "institution_admin" | "security_officer" | "host";
+export type Role = "super_admin" | "institution_admin" | "security_officer" | "host" | "procurement_admin";
 
 /**
  * "other" requires a corresponding backend change (VisitorType enum +
@@ -38,6 +38,7 @@ export type UserStatus = "active" | "inactive";
 
 export type NotificationType =
   | "visitor_submitted"
+  | "visitor_awaiting_confirmation"
   | "visitor_signed_in"
   | "visitor_signed_out"
   | "visitor_cancelled"
@@ -45,6 +46,9 @@ export type NotificationType =
   | "contractor_checked_in"
   | "contractor_checked_out"
   | "contractor_revoked"
+  | "contractor_submitted"
+  | "contractor_approved"
+  | "contractor_rejected"
   | "dispatch_received";
 
 export interface Institution {
@@ -159,22 +163,86 @@ export interface Visitor {
   createdAt: string;
 }
 
-export type ContractorStatus = "active" | "inactive";
+/**
+ * The old single-step "Add contractor" flow is gone — a contractor now goes
+ * through invited -> pending_review -> active (or rejected, which loops back
+ * to a re-editable pending_review attempt on the same link) -> inactive
+ * (revoked). See FRONTEND_INTEGRATION_GUIDE.md §4.4.
+ */
+export type ContractorStatus = "invited" | "pending_review" | "rejected" | "active" | "inactive";
 
+export type PaymentStatus = "not_started" | "pending" | "paid";
+
+/**
+ * Only `email`/`validityFrom`/`validityTo` exist right after an invite — every
+ * other field is filled in later by the contractor on the public registration
+ * link, so treat all of them as possibly absent until status is at least
+ * `pending_review`.
+ */
 export interface Contractor {
   _id: string;
-  name: string;
-  companyName: string;
   email: string;
-  phone: string;
-  idNumber: string;
+  name?: string;
+  companyName?: string;
+  phone?: string;
+  idNumber?: string;
   photoUrl?: string;
   validityFrom: string;
   validityTo: string;
   status: ContractorStatus;
+  registrationToken?: string;
+  registrationTokenExpiresAt?: string;
+  rejectReason?: string;
   revokeReason?: string;
   checkedIn?: boolean;
+  nationality?: string;
+  addressOfContractor?: string;
+  permanentAddress?: string;
+  officeAddress?: string;
+  rcNumber?: string;
+  tin?: string;
+  bppRegistrationDate?: string;
+  companyProfileDoc?: string;
+  cacCertificate?: string;
+  taxClearanceCertificate?: string;
+  vatCertificate?: string;
+  pencomCertificate?: string;
+  itfCertificate?: string;
+  nsitfCertificate?: string;
+  bppRegistrationCertificate?: string;
+  efccScumlCertificate?: string;
+  passportPhotos?: string[];
+  ninDocument?: string;
+  letterOfIntroduction?: string;
   createdAt: string;
+}
+
+/** `GET /contractor-registration/:token` — public, no auth. See §4.4/§4.4a. */
+export interface ContractorRegistrationView {
+  status: ContractorStatus;
+  email: string;
+  validityFrom: string;
+  validityTo: string;
+  fee: number;
+  paymentStatus: PaymentStatus;
+  /** Only present when `status` is "rejected" — what to fix before resubmitting. */
+  rejectReason?: string;
+  institution: { name: string; logoUrl?: string };
+  /** Previously-entered fields, for resuming or resubmitting after rejection. */
+  existing?: Partial<Contractor>;
+}
+
+/** `POST /contractor-registration/:token/payment` response — see §4.4a. */
+export interface ContractorPaymentInitResponse {
+  paymentStatus: PaymentStatus;
+  amount: number;
+  /** Only present once PAYMENT_GATEWAY=tap — pass straight into TAP's TAPPaymentPop SDK. */
+  popup?: {
+    apiKey: string;
+    transID: string;
+    amount: number;
+    email: string;
+  };
 }
 
 export interface ContractorVisit {

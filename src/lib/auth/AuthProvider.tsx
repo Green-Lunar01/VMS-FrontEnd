@@ -20,6 +20,7 @@ export const ROLE_HOME: Record<Role, string> = {
   security_officer: "/security/home",
   host: "/host/dashboard",
   super_admin: "/super-admin/dashboard",
+  procurement_admin: "/procurement/reviews",
 };
 
 interface AuthContextValue {

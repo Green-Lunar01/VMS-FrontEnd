@@ -2,12 +2,15 @@ import { api } from "@/lib/api/client";
 import type {
   AppNotification,
   Contractor,
+  ContractorPaymentInitResponse,
+  ContractorRegistrationView,
   ContractorVisit,
   Dispatch,
   Institution,
   InstitutionType,
   ModeOfEntry,
   Officer,
+  PaymentStatus,
   Role,
   User,
   Visitor,
@@ -43,7 +46,7 @@ export interface CreateAdminPayload {
   name: string;
   email: string;
   password: string;
-  role: Extract<Role, "institution_admin" | "security_officer">;
+  role: Extract<Role, "institution_admin" | "security_officer" | "procurement_admin">;
 }
 
 export const usersApi = {
@@ -271,26 +274,52 @@ export const visitorsApi = {
 
 /* ----------------------------------------------------------- contractors */
 
-export interface CreateContractorPayload {
-  name: string;
-  companyName: string;
+/**
+ * Replaces the old single-step "Add contractor" form. An Institution Admin
+ * now only provides this much — everything else (name, company, documents)
+ * is filled in later by the contractor themselves via the emailed
+ * registration link. See FRONTEND_INTEGRATION_GUIDE.md §4.4.
+ */
+export interface InviteContractorPayload {
   email: string;
-  phone: string;
   validityFrom: string;
   validityTo: string;
 }
 
 export const contractorsApi = {
+  invite: (payload: InviteContractorPayload) => api.post<Contractor>("/contractors/invite", payload),
   list: (params?: { q?: string; status?: string }) => api.get<Contractor[]>("/contractors", { query: params }),
   get: (id: string) => api.get<Contractor>(`/contractors/${id}`),
   visits: (id: string) => api.get<ContractorVisit[]>(`/contractors/${id}/visits`),
-  create: (payload: CreateContractorPayload) => api.post<Contractor>("/contractors", payload),
-  update: (id: string, payload: Partial<CreateContractorPayload>) =>
+  update: (id: string, payload: Partial<Pick<Contractor, "phone">>) =>
     api.patch<Contractor>(`/contractors/${id}`, payload),
   revoke: (id: string, reason: string) => api.patch<Contractor>(`/contractors/${id}/revoke`, { reason }),
   /** Both return the ContractorVisit record they created/closed, not the contractor itself. */
   checkIn: (id: string) => api.patch<ContractorVisit>(`/contractors/${id}/check-in`),
   checkOut: (id: string) => api.patch<ContractorVisit>(`/contractors/${id}/check-out`),
+  /** Procurement Admin only — their entire dashboard is these three calls. */
+  pendingReview: () => api.get<Contractor[]>("/contractors/pending-review"),
+  approve: (id: string) => api.patch<Contractor>(`/contractors/${id}/approve`),
+  reject: (id: string, reason: string) => api.patch<Contractor>(`/contractors/${id}/reject`, { reason }),
+};
+
+/**
+ * Public, unauthenticated — the registration token in the URL is the
+ * credential, so every call here passes `anonymous: true`. See §4.4/§4.4a.
+ */
+export const contractorRegistrationApi = {
+  view: (token: string) =>
+    api.get<ContractorRegistrationView>(`/contractor-registration/${token}`, { anonymous: true }),
+  initiatePayment: (token: string) =>
+    api.post<ContractorPaymentInitResponse>(`/contractor-registration/${token}/payment`, undefined, {
+      anonymous: true,
+    }),
+  paymentStatus: (token: string) =>
+    api.get<{ paymentStatus: PaymentStatus }>(`/contractor-registration/${token}/payment/status`, {
+      anonymous: true,
+    }),
+  submit: (token: string, formData: FormData) =>
+    api.upload<Contractor>(`/contractor-registration/${token}/submit`, formData, { anonymous: true }),
 };
 
 /* -------------------------------------------------------------- dispatch */

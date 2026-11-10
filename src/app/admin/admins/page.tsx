@@ -20,11 +20,13 @@ import type { Role, User } from "@/lib/types";
 const ROLE_LABEL: Record<string, string> = {
   institution_admin: "Int",
   security_officer: "Security officer",
+  procurement_admin: "Procurement admin",
 };
 
 const ROLE_OPTIONS = [
   { label: "Int", value: "institution_admin" },
   { label: "Security officer", value: "security_officer" },
+  { label: "Procurement admin", value: "procurement_admin" },
 ];
 
 const inputClass =
@@ -167,7 +169,7 @@ function AdminFormModal({
           name: String(form.get("name") ?? ""),
           email: String(form.get("email") ?? ""),
           password: String(form.get("password") ?? ""),
-          role: role as "institution_admin" | "security_officer",
+          role: role as "institution_admin" | "security_officer" | "procurement_admin",
         });
       }
       onDone();

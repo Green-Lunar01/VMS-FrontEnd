@@ -43,6 +43,9 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: "Institutions", href: "/super-admin/institutions", icon: Building06Icon },
     { label: "Admin", href: "/super-admin/admins", icon: UserFullViewIcon },
   ],
+  procurement_admin: [
+    { label: "Pending Reviews", href: "/procurement/reviews", icon: Briefcase01Icon },
+  ],
 };
 
 export const ROLE_LABEL: Record<Role, string> = {
@@ -50,4 +53,5 @@ export const ROLE_LABEL: Record<Role, string> = {
   security_officer: "Security Officer",
   host: "Resident",
   super_admin: "Super Admin",
+  procurement_admin: "Procurement Admin",
 };
